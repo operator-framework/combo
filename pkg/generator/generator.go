@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Generate accepts a args []map[string]string and generates a multidoc with
+// Generate accepts an args []map[string]string and generates a multidoc with
 // each key/value pair specified within args. It then returns this multidoc in
 // the []byte format.
 func Generate(args []map[string]string, file []byte) ([]byte, error) {
