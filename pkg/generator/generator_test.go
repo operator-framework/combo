@@ -4,6 +4,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/operator-framework/combo/pkg/types"
 )
 
 func TestGenerate(t *testing.T) {
@@ -17,7 +19,7 @@ func TestGenerate(t *testing.T) {
 		t.Fatal("Error with test, could not process output test file: ", err.Error())
 	}
 
-	result, err := Generate([]map[string]string{
+	result, err := Generate(types.Combos{
 		{
 			"REPLACE_ME": "foo",
 		},

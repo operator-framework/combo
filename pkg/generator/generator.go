@@ -3,12 +3,14 @@ package generator
 import (
 	"fmt"
 	"strings"
+
+	"github.com/operator-framework/combo/pkg/types"
 )
 
 // Generate accepts an args []map[string]string and generates a multidoc with
 // each key/value pair specified within args. It then returns this multidoc in
 // the []byte format.
-func Generate(args []map[string]string, file []byte) ([]byte, error) {
+func Generate(args types.Combos, file []byte) ([]byte, error) {
 	stringData := string(file)
 
 	var generatedCombos [][]byte
