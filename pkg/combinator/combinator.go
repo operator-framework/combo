@@ -1,18 +1,18 @@
 package combinator
 
 import (
-	"github.com/operator-framework/combo/pkg/types"
+	"strings"
 )
 
-func Solve(args types.ComboArgs) types.Combos {
-	combos := types.Combos{}
+func Solve(args map[string]string) []map[string]string {
+	combos := []map[string]string{}
 
 	// Create holder arrays to process the incoming args
 	var arrays [][]string
 	var replacements []string
-	for _, arg := range args {
-		arrays = append(arrays, arg.Options)
-		replacements = append(replacements, arg.Name)
+	for key, val := range args {
+		arrays = append(arrays, strings.Split(val, ","))
+		replacements = append(replacements, key)
 	}
 
 	// Define mx length of each combo

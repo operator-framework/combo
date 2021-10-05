@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	arguments []string
+	replacements map[string]string
 )
 
 // evalCmd represents the eval command
@@ -20,9 +20,9 @@ var evalCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(evalCmd)
-	evalCmd.Flags().StringArrayVarP(&arguments, "argument", "a", []string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
+	evalCmd.Flags().StringToStringVarP(&replacements, "replacement", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
 }
 
 func run(cmd *cobra.Command, args []string) {
-	fmt.Println("Eval was ran! Woo!")
+	fmt.Println("eval called: need to implement")
 }

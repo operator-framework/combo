@@ -3,20 +3,23 @@ package generator
 import (
 	"fmt"
 	"strings"
-
-	"github.com/operator-framework/combo/pkg/types"
 )
 
 // Generate accepts an args []map[string]string and generates a multidoc with
 // each key/value pair specified within args. It then returns this multidoc in
 // the []byte format.
-func Generate(args types.Combos, file []byte) ([]byte, error) {
+func Generate(replacementCombos []map[string]string, file []byte) ([]byte, error) {
+	// Exit early if reading an empty file
+	if len(file) == 0 {
+		return nil, nil
+	}
+
 	stringData := string(file)
 
 	var generatedCombos [][]byte
-	for _, combo := range args {
+	for _, replacementCombo := range replacementCombos {
 		currentFileCombo := stringData
-		for key, val := range combo {
+		for key, val := range replacementCombo {
 			currentFileCombo = strings.ReplaceAll(currentFileCombo, key, val)
 		}
 		generatedCombos = append(generatedCombos, []byte(currentFileCombo))

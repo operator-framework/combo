@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"sort"
 	"testing"
-
-	"github.com/operator-framework/combo/pkg/types"
 )
 
 // TestCombinations tests the combinator function
@@ -36,34 +34,16 @@ func TestCombinations(t *testing.T) {
 
 }
 
-func getTestData() types.ComboArgs {
-	return types.ComboArgs{
-		{
-			Name: "TEST1",
-			Options: []string{
-				"foo",
-				"bar",
-			},
-		},
-		{
-			Name: "TEST2",
-			Options: []string{
-				"zip",
-				"zap",
-			},
-		},
-		{
-			Name: "TEST3",
-			Options: []string{
-				"bip",
-				"bap",
-			},
-		},
+func getTestData() map[string]string {
+	return map[string]string{
+		"TEST1": "foo,bar",
+		"TEST2": "zip,zap",
+		"TEST3": "bip,bap",
 	}
 }
 
-func getExpectedCombos() types.Combos {
-	return types.Combos{
+func getExpectedCombos() []map[string]string {
+	return []map[string]string{
 		{
 			"TEST1": "foo",
 			"TEST2": "zip",
