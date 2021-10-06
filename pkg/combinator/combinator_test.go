@@ -1,10 +1,9 @@
 package combinator
 
 import (
-	"fmt"
-	"reflect"
-	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 // TestCombinations tests the combinator function
@@ -14,24 +13,7 @@ func TestCombinations(t *testing.T) {
 	expectedCombos := getExpectedCombos()
 	generatedCombos := Solve(testData)
 
-	// Sort the data to prep for a deep equal
-	sort.Slice(generatedCombos, func(i, j int) bool {
-		return fmt.Sprint(generatedCombos[i]) < fmt.Sprint(generatedCombos[j])
-	})
-
-	sort.Slice(expectedCombos, func(i, j int) bool {
-		return fmt.Sprint(expectedCombos[i]) < fmt.Sprint(expectedCombos[j])
-	})
-
-	// If the outcome and result are not equal, fail
-	if !reflect.DeepEqual(generatedCombos, expectedCombos) {
-		t.Fatalf(
-			"\nCombos generated incorrectly.\n\nHave:\n%v\nWant:\n%v",
-			generatedCombos,
-			expectedCombos,
-		)
-	}
-
+	require.ElementsMatch(t, generatedCombos, expectedCombos, "Combos generated incorrectly")
 }
 
 func getTestData() map[string]string {

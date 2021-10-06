@@ -18,11 +18,11 @@ func Solve(args map[string]string) []map[string]string {
 	// Define mx length of each combo
 	max := len(arrays) - 1
 
-	// Define recrusive function for getting combinations
+	// Define recursive function for getting combinations
 	var helper func(combo map[string]string, i int)
 	helper = func(combo map[string]string, i int) {
-		for j, l := 0, len(arrays[i]); j < l; j++ {
-			combo[replacements[i]] = arrays[i][j]
+		for _, val := range arrays[i] {
+			combo[replacements[i]] = val
 			if i == max {
 				// Append a copy of the map to the combos
 				combos = append(combos, copyMap(combo))

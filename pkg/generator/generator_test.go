@@ -7,7 +7,7 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	input, err := os.ReadFile("./testData/input.yaml")
+	input, err := os.ReadFile("./testdata/input.yaml")
 	if err != nil {
 		t.Fatal("Error with test, could not process input test file: ", err.Error())
 	}
