@@ -6,14 +6,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var combinationTests = []struct {
+	name  string
+	input map[string]string
+	want  []map[string]string
+}{
+	{"empty map input", map[string]string{}, []map[string]string{}},
+	{"standard set of args", getTestData(), getExpectedCombos()},
+}
+
 // TestCombinations tests the combinator function
 func TestCombinations(t *testing.T) {
-	// Get needed data for comparison
-	testData := getTestData()
-	expectedCombos := getExpectedCombos()
-	generatedCombos := Solve(testData)
-
-	require.ElementsMatch(t, generatedCombos, expectedCombos, "Combos generated incorrectly")
+	for _, testCase := range combinationTests {
+		t.Run(testCase.name, func(t *testing.T) {
+			got := Solve(testCase.input)
+			require.ElementsMatch(t, got, testCase.want, "Combos generated incorrectly")
+		})
+	}
 }
 
 func getTestData() map[string]string {

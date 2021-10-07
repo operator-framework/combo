@@ -5,6 +5,11 @@ import (
 )
 
 func Solve(args map[string]string) []map[string]string {
+	// Return early if no args were sent
+	if len(args) == 0 {
+		return []map[string]string{}
+	}
+
 	combos := []map[string]string{}
 
 	// Create holder arrays to process the incoming args
