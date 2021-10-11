@@ -16,7 +16,7 @@ func Solve(args map[string][]string) []map[string]string {
 		replacements = append(replacements, key)
 	}
 
-	// Define mx length of each combo
+	// Define max length of each combo
 	max := len(arrays) - 1
 
 	// Define recursive function for getting combinations
