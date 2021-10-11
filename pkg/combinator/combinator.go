@@ -1,10 +1,6 @@
 package combinator
 
-import (
-	"strings"
-)
-
-func Solve(args map[string]string) []map[string]string {
+func Solve(args map[string][]string) []map[string]string {
 	// Return early if no args were sent
 	if len(args) == 0 {
 		return []map[string]string{}
@@ -16,7 +12,7 @@ func Solve(args map[string]string) []map[string]string {
 	var arrays [][]string
 	var replacements []string
 	for key, val := range args {
-		arrays = append(arrays, strings.Split(val, ","))
+		arrays = append(arrays, val)
 		replacements = append(replacements, key)
 	}
 

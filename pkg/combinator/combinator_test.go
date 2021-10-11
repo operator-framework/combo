@@ -8,10 +8,10 @@ import (
 
 var combinationTests = []struct {
 	name  string
-	input map[string]string
+	input map[string][]string
 	want  []map[string]string
 }{
-	{"empty map input", map[string]string{}, []map[string]string{}},
+	{"empty map input", map[string][]string{}, []map[string]string{}},
 	{"standard set of args", getTestData(), getExpectedCombos()},
 }
 
@@ -25,11 +25,11 @@ func TestCombinations(t *testing.T) {
 	}
 }
 
-func getTestData() map[string]string {
-	return map[string]string{
-		"TEST1": "foo,bar",
-		"TEST2": "zip,zap",
-		"TEST3": "bip,bap",
+func getTestData() map[string][]string {
+	return map[string][]string{
+		"TEST1": {"foo", "bar"},
+		"TEST2": {"zip", "zap"},
+		"TEST3": {"bip", "bap"},
 	}
 }
 
