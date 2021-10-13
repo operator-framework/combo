@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -10,9 +11,9 @@ import (
 // each key/value pair specified within args. It then returns this multidoc in
 // the []byte format.
 func Generate(replacementCombos []map[string]string, file []byte) ([]byte, error) {
-	// Exit early if reading an empty file
+	// Error if attempting to read an empty file
 	if len(file) == 0 {
-		return nil, nil
+		return nil, errors.New("cannot generate combinations for an empty file")
 	}
 
 	// Get each document

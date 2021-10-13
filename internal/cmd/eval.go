@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -13,32 +12,28 @@ import (
 )
 
 var (
-	replacements    map[string]string
-	LongDescription string = `Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
-
-Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
-`
+	replacements map[string]string
 )
 
 // evalCmd represents the eval command
 var evalCmd = &cobra.Command{
 	Use:   "eval",
 	Short: "Evaluate the combinations for a file at the given path",
-	Long:  LongDescription,
-	RunE:  run,
-	Args:  cobra.ExactArgs(1),
+	Long: `Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
+
+Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
+	`,
+	RunE: run,
+	Args: cobra.ExactArgs(1),
 }
 
 func init() {
 	rootCmd.AddCommand(evalCmd)
 	evalCmd.Flags().StringToStringVarP(&replacements, "replacement", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
+	evalCmd.MarkFlagRequired("replacement")
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	if len(replacements) == 0 {
-		return errors.New("must specify at least one replacement")
-	}
-
 	file, err := os.ReadFile(args[0])
 	if err != nil {
 		return err
