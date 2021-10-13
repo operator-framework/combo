@@ -1,2 +1,7 @@
+name: test
+---
 name: hello
+test: REPLACE_ME
+---
+name: world
 test: REPLACE_ME

@@ -2,8 +2,10 @@ package generator
 
 import (
 	"os"
-	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var generateTests = []struct {
@@ -18,6 +20,16 @@ var generateTests = []struct {
 		},
 		{
 			"REPLACE_ME": "bar",
+		},
+	}},
+	{"complex input file", "./testdata/complexInput.yaml", "./testData/complexOutput.yaml", []map[string]string{
+		{
+			"NAMESPACE": "foo",
+			"NAME":      "baz",
+		},
+		{
+			"NAMESPACE": "bar",
+			"NAME":      "baz",
 		},
 	}},
 }
@@ -40,9 +52,7 @@ func TestGenerate(t *testing.T) {
 				t.Fatalf("Recieved an error while running Generate(): %v", err)
 			}
 
-			if !reflect.DeepEqual(got, want) {
-				t.Fatalf("Document combinations generated incorrectly\n\nRecieved:\n\n%s \nbut wanted:\n\n%s", got, want)
-			}
+			require.ElementsMatch(t, strings.Split(string(got), "---"), strings.Split(string(want), "---"), "Document combinations generated incorrectly")
 		})
 	}
 }
