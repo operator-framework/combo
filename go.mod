@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/golangci/golangci-lint v1.42.1
+	github.com/jinzhu/copier v0.3.2
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b

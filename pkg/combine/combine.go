@@ -1,5 +1,13 @@
-package combinator
+package combine
 
+import (
+	"github.com/jinzhu/copier"
+)
+
+// Solve takes a map[]string[]string to get the combinations
+// between the values. Utilizes recursion to produce a
+// []map[string]string that represents the key/value pair
+// combinations.
 func Solve(args map[string][]string) []map[string]string {
 	// Return early if no args were sent
 	if len(args) == 0 {
@@ -26,23 +34,16 @@ func Solve(args map[string][]string) []map[string]string {
 			combo[replacements[i]] = val
 			if i == max {
 				// Append a copy of the map to the combos
-				combos = append(combos, copyMap(combo))
+				comboCopy := map[string]string{}
+				copier.Copy(&comboCopy, &combo)
+				combos = append(combos, comboCopy)
 			} else {
 				helper(combo, i+1)
 			}
 		}
 	}
 
-	// Recurse for combinations
+	// Recurse to produce combinations
 	helper(map[string]string{}, 0)
 	return combos
-}
-
-// copyMap simple takes in a map and returns a copy of it
-func copyMap(original map[string]string) map[string]string {
-	copy := map[string]string{}
-	for key, val := range original {
-		copy[key] = val
-	}
-	return copy
 }

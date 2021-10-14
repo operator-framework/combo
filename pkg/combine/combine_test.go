@@ -1,4 +1,4 @@
-package combinator
+package combine
 
 import (
 	"testing"

@@ -21,8 +21,8 @@ type TemplateSpec struct {
 	// Body is the parameterized template string.
 	Body string `json:"body"`
 
-	// +optional
 	// Parameters is the set of strings within Body to treat as parameters.
+	// +kubebuilder:validation:MinItems:=1
 	Parameters []string `json:"parameters,omitempty"`
 }
 
@@ -32,7 +32,7 @@ type TemplateSpec struct {
 // +kubebuilder:storageversion
 // +kubebuilder:resource:categories=combo,scope=Cluster
 
-// Template is the Schema for the provisionerclasses API
+// Template is a custom resource that represents a parameterized set of Kubernetes manifests.
 type Template struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,10 +52,11 @@ type TemplateList struct {
 // CombinationSpec defines the desired state of Combination
 type CombinationSpec struct {
 	// Template is the name of the template to evaluate.
+	// +kubebuilder:validation:Pattern=[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
 	Template string `json:"template"`
 
 	// Arguments contains the list of values to use for each parameter.
-	// +optional
+	// +kubebuilder:validation:MinProperties:=1
 	Arguments map[string][]string `json:"arguments,omitempty"`
 }
 

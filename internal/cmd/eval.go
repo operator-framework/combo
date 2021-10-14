@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/operator-framework/combo/pkg/combinator"
+	"github.com/operator-framework/combo/pkg/combine"
 	"github.com/operator-framework/combo/pkg/generator"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -43,7 +43,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to validate file specified: %v", err)
 	}
 
-	combinations := combinator.Solve(formatReplacements())
+	combinations := combine.Solve(formatReplacements())
 	generatedFile, err := generator.Generate(combinations, file)
 	if err != nil {
 		return err
@@ -68,8 +68,5 @@ func formatReplacements() map[string][]string {
 
 func validateFile(file []byte) error {
 	var holder interface{}
-	if err := yaml.Unmarshal(file, &holder); err != nil {
-		return err
-	}
-	return nil
+	return yaml.Unmarshal(file, &holder)
 }
