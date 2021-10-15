@@ -1,48 +1,77 @@
 package generator
 
 import (
-	"os"
 	"strings"
 	"testing"
+
+	"testing/fstest"
 
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	INPUT_PATH  = "input.yaml"
+	OUTPUT_PATH = "output.yaml"
+)
+
 var generateTests = []struct {
 	name         string
-	inputFile    string
-	outputFile   string
+	fileSystem   fstest.MapFS
 	combinations []map[string]string
 }{
-	{"simple input file", "./testdata/input.yaml", "./testData/output.yaml", []map[string]string{
-		{
-			"REPLACE_ME": "foo",
+	{
+		"simple input file",
+		fstest.MapFS{
+			INPUT_PATH: &fstest.MapFile{
+				Data: []byte(`---
+name: test
+---
+name: hello
+test: REPLACE_ME
+---
+name: world
+test: REPLACE_ME`,
+				),
+			},
+			OUTPUT_PATH: &fstest.MapFile{
+				Data: []byte(`---
+name: test
+---
+name: hello
+test: foo
+---
+name: hello
+test: bar
+---
+name: world
+test: foo
+---
+name: world
+test: bar
+`,
+				),
+			},
 		},
-		{
-			"REPLACE_ME": "bar",
+		[]map[string]string{
+			{
+				"REPLACE_ME": "foo",
+			},
+			{
+				"REPLACE_ME": "bar",
+			},
 		},
-	}},
-	{"complex input file", "./testdata/complexInput.yaml", "./testData/complexOutput.yaml", []map[string]string{
-		{
-			"NAMESPACE": "foo",
-			"NAME":      "baz",
-		},
-		{
-			"NAMESPACE": "bar",
-			"NAME":      "baz",
-		},
-	}},
+	},
 }
 
 func TestGenerate(t *testing.T) {
 	for _, testCase := range generateTests {
 		t.Run(testCase.name, func(t *testing.T) {
-			input, err := os.ReadFile(testCase.inputFile)
+			input, err := testCase.fileSystem.ReadFile(INPUT_PATH)
 			if err != nil {
 				t.Fatal("Error with test, could not process input test file: ", err.Error())
 			}
 
-			want, err := os.ReadFile(testCase.outputFile)
+			want, err := testCase.fileSystem.ReadFile(OUTPUT_PATH)
 			if err != nil {
 				t.Fatal("Error with test, could not process output test file: ", err.Error())
 			}
