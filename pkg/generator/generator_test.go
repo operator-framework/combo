@@ -4,37 +4,36 @@ import (
 	"strings"
 	"testing"
 
-	"testing/fstest"
-
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	INPUT_PATH  = "input.yaml"
-	OUTPUT_PATH = "output.yaml"
-)
+type expected struct {
+	err        error
+	evaluation string
+}
 
-var generateTests = []struct {
-	name         string
-	fileSystem   fstest.MapFS
-	combinations []map[string]string
-}{
-	{
-		"simple input file",
-		fstest.MapFS{
-			INPUT_PATH: &fstest.MapFile{
-				Data: []byte(`---
+func TestGenerate(t *testing.T) {
+	for _, tt := range []struct {
+		name         string
+		template     string
+		combinations []map[string]string
+		expected     expected
+	}{
+		{
+			name: "can process a template correctly",
+			template: `---
 name: test
 ---
 name: hello
 test: REPLACE_ME
 ---
 name: world
-test: REPLACE_ME`,
-				),
-			},
-			OUTPUT_PATH: &fstest.MapFile{
-				Data: []byte(`---
+test: REPLACE_ME
+`,
+			expected: expected{
+				err: nil,
+				evaluation: `---
 name: test
 ---
 name: hello
@@ -49,39 +48,25 @@ test: foo
 name: world
 test: bar
 `,
-				),
+			},
+			combinations: []map[string]string{
+				{
+					"REPLACE_ME": "foo",
+				},
+				{
+					"REPLACE_ME": "bar",
+				},
 			},
 		},
-		[]map[string]string{
-			{
-				"REPLACE_ME": "foo",
-			},
-			{
-				"REPLACE_ME": "bar",
-			},
-		},
-	},
-}
-
-func TestGenerate(t *testing.T) {
-	for _, testCase := range generateTests {
-		t.Run(testCase.name, func(t *testing.T) {
-			input, err := testCase.fileSystem.ReadFile(INPUT_PATH)
-			if err != nil {
-				t.Fatal("Error with test, could not process input test file: ", err.Error())
-			}
-
-			want, err := testCase.fileSystem.ReadFile(OUTPUT_PATH)
-			if err != nil {
-				t.Fatal("Error with test, could not process output test file: ", err.Error())
-			}
-
-			got, err := Generate(testCase.combinations, input)
-			if err != nil {
-				t.Fatalf("Recieved an error while running Generate(): %v", err)
-			}
-
-			require.ElementsMatch(t, strings.Split(string(got), "---"), strings.Split(string(want), "---"), "Document combinations generated incorrectly")
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			evaluation, err := Generate(tt.combinations, []byte(tt.template))
+			assert.Equal(t, tt.expected.err, err)
+			require.ElementsMatch(
+				t,
+				strings.Split(string(tt.expected.evaluation), "---"),
+				strings.Split(string(evaluation), "---"),
+				"Document evaluations generated incorrectly")
 		})
 	}
 }
