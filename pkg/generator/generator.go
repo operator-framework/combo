@@ -1,61 +1,69 @@
 package generator
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/operator-framework/combo/pkg/combination"
 )
 
-// Generate accepts an args []map[string]string and generates a multidoc with
-// each key/value pair specified within args. It then returns this multidoc in
-// the []byte format.
-func Generate(replacementCombos []map[string]string, file []byte) ([]byte, error) {
-	// Error if attempting to read an empty file
-	if len(file) == 0 {
-		return nil, errors.New("cannot generate combinations for an empty file")
-	}
-
-	// Get each document
-	documents := strings.Split(string(file), "---")
-
-	// For each document specified, generate its combinations
-	var generatedCombos [][]byte
-	for _, document := range documents {
-		if document == "" {
-			continue
-		}
-
-		var added bool
-		for _, replacementCombo := range replacementCombos {
-			documentCombo := document
-			for key, val := range replacementCombo {
-				documentCombo = regexp.MustCompile(key+`\b`).ReplaceAllString(documentCombo, val)
-			}
-
-			if documentCombo != document || !added {
-				generatedCombos = append(generatedCombos, []byte(documentCombo))
-				added = true
-			}
-		}
-
-	}
-
-	// Build the multi-doc back up after processing
-	return buildMultiDoc(generatedCombos), nil
+type document struct {
+	value string
+	seen  bool
 }
 
-// buildMultiDoc Takes a [][]byte and combines each []byte together to form
-// a YAML multidoc with the needed seperator.
-func buildMultiDoc(docs [][]byte) []byte {
-	var multiDoc string
-	for i := 0; i < len(docs); i++ {
-		var docSeperator string
-		if i != len(docs)-1 {
-			docSeperator = "---\n"
-		}
+type documents []*document
 
-		multiDoc += fmt.Sprintf("%s\n%s", strings.TrimSpace(string(docs[i])), docSeperator)
+type Template struct {
+	documents documents
+}
+
+// with builds the template documents with the combination set specified
+func (t *Template) with(combo combination.Set) string {
+	var result string
+
+	// For each document in the template evaluate the current combination set
+	for _, document := range t.documents {
+		incDocument := document.value
+		for key, val := range combo {
+			incDocument = regexp.MustCompile(key+`\b`).ReplaceAllString(incDocument, val)
+		}
+		// Add the document if it had replacements or hadn't been seen and is a valid string
+		shouldAdd := (incDocument != document.value || !document.seen) && strings.TrimSpace(incDocument) != ""
+		if shouldAdd {
+			document.seen = true
+			result += fmt.Sprintf("---%v", incDocument)
+		}
 	}
-	return []byte(fmt.Sprintf("---\n%v", multiDoc))
+	return result
+}
+
+// Evaluate uses specified template and combination stream to build/return the combinations of
+// documents built together
+func Evaluate(ctx context.Context, stringTemplate string, combinations combination.Stream) (string, error) {
+	// Separate the documents by the yaml seperator and build a template with them
+	docs := strings.Split(stringTemplate, "---")
+	var splitTemplate Template
+	for _, doc := range docs {
+		splitTemplate.documents = append(splitTemplate.documents, &document{value: doc})
+	}
+
+	var result string
+
+	// Wait for the context to end or the combinations to be done
+	for {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		default:
+			combination, err := combinations.Next(ctx)
+			if err != nil || combination == nil {
+				return result, err
+			}
+
+			result += splitTemplate.with(combination)
+		}
+	}
 }

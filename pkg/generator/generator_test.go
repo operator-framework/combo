@@ -1,9 +1,11 @@
 package generator
 
 import (
+	"context"
 	"strings"
 	"testing"
 
+	"github.com/operator-framework/combo/pkg/combination"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -13,11 +15,11 @@ type expected struct {
 	evaluation string
 }
 
-func TestGenerate(t *testing.T) {
+func TestEvaluate(t *testing.T) {
 	for _, tt := range []struct {
 		name         string
 		template     string
-		combinations []map[string]string
+		combinations combination.Stream
 		expected     expected
 	}{
 		{
@@ -25,42 +27,60 @@ func TestGenerate(t *testing.T) {
 			template: `---
 name: test
 ---
-name: hello
-test: REPLACE_ME
+name: replacement1
+test: REPLACE_ME_1
 ---
-name: world
-test: REPLACE_ME
+name: replacement2
+test: REPLACE_ME_2
 `,
 			expected: expected{
 				err: nil,
 				evaluation: `---
 name: test
 ---
-name: hello
+name: replacement1
 test: foo
 ---
-name: hello
-test: bar
+name: replacement2
+test: zip
 ---
-name: world
+name: replacement1
 test: foo
 ---
-name: world
+name: replacement2
+test: zap
+---
+name: replacement1
 test: bar
+---
+name: replacement2
+test: zap
+---
+name: replacement1
+test: bar
+---
+name: replacement2
+test: zip
 `,
 			},
-			combinations: []map[string]string{
-				{
-					"REPLACE_ME": "foo",
-				},
-				{
-					"REPLACE_ME": "bar",
-				},
-			},
+			combinations: combination.NewStream(
+				combination.WithArgs(map[string][]string{
+					"REPLACE_ME_1": {"foo", "bar"},
+					"REPLACE_ME_2": {"zip", "zap"},
+				}),
+				combination.WithSolveAhead(),
+			),
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			evaluation, err := Generate(tt.combinations, []byte(tt.template))
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			evaluation, err := Evaluate(ctx, tt.template, tt.combinations)
+			if err != nil {
+				t.Fatal("recieved an error during evaluation:", err)
+			}
+
 			assert.Equal(t, tt.expected.err, err)
 			require.ElementsMatch(
 				t,

@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/operator-framework/combo/pkg/combine"
+	"github.com/operator-framework/combo/pkg/combination"
 	"github.com/operator-framework/combo/pkg/generator"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -43,13 +44,20 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to validate file specified: %v", err)
 	}
 
-	combinations := combine.Solve(formatReplacements())
-	generatedFile, err := generator.Generate(combinations, file)
+	combinations := combination.NewStream(
+		combination.WithArgs(formatReplacements()),
+		combination.WithSolveAhead(),
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	generatedFile, err := generator.Evaluate(ctx, string(file), combinations)
 	if err != nil {
 		return err
 	}
 
-	if err := validateFile(generatedFile); err != nil {
+	if err := validateFile([]byte(generatedFile)); err != nil {
 		return fmt.Errorf("failed to validate file generated: %v", err)
 	}
 
