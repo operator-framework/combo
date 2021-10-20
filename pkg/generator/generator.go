@@ -20,24 +20,42 @@ type Template struct {
 	documents documents
 }
 
-// with builds the template documents with the combination set specified
-func (t *Template) with(combo combination.Set) string {
-	var result string
-
-	// For each document in the template evaluate the current combination set
+func (t *Template) has(find string) bool {
 	for _, document := range t.documents {
-		incDocument := document.value
-		for key, val := range combo {
-			incDocument = regexp.MustCompile(key+`\b`).ReplaceAllString(incDocument, val)
-		}
-		// Add the document if it had replacements or hadn't been seen and is a valid string
-		shouldAdd := (incDocument != document.value || !document.seen) && strings.TrimSpace(incDocument) != ""
-		if shouldAdd {
-			document.seen = true
-			result += fmt.Sprintf("---%v", incDocument)
+		if document.value == find {
+			return true
 		}
 	}
+	return false
+}
+
+func (t *Template) build() string {
+	var result string
+	for _, document := range t.documents {
+		result += fmt.Sprintf("---\n%v\n", strings.TrimSpace(document.value))
+	}
+
 	return result
+}
+
+// with builds the template documents with the combination set specified
+func (t *Template) with(combo combination.Set, to Template) Template {
+	// For each document in the template evaluate the current combination set
+	for _, doc := range t.documents {
+		incDoc := doc.value
+		for key, val := range combo {
+			incDoc = regexp.MustCompile(key+`\b`).ReplaceAllString(incDoc, val)
+		}
+
+		// Add the document if it had replacements or wasn't seen, wasn't empty and the to document
+		// didn't already have it.
+		shouldAdd := (incDoc != doc.value || !doc.seen) && strings.TrimSpace(incDoc) != "" && !to.has(incDoc)
+		if shouldAdd {
+			doc.seen = true
+			to.documents = append(to.documents, &document{value: incDoc})
+		}
+	}
+	return to
 }
 
 // Evaluate uses specified template and combination stream to build/return the combinations of
@@ -50,7 +68,7 @@ func Evaluate(ctx context.Context, stringTemplate string, combinations combinati
 		splitTemplate.documents = append(splitTemplate.documents, &document{value: doc})
 	}
 
-	var result string
+	var result Template
 
 	// Wait for the context to end or the combinations to be done
 	for {
@@ -59,11 +77,15 @@ func Evaluate(ctx context.Context, stringTemplate string, combinations combinati
 			return "", ctx.Err()
 		default:
 			combination, err := combinations.Next(ctx)
-			if err != nil || combination == nil {
-				return result, err
+			if err != nil {
+				return "", err
 			}
 
-			result += splitTemplate.with(combination)
+			if combination == nil {
+				return result.build(), nil
+			}
+
+			result = splitTemplate.with(combination, result)
 		}
 	}
 }

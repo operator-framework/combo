@@ -23,50 +23,121 @@ func TestEvaluate(t *testing.T) {
 		expected     expected
 	}{
 		{
-			name: "can process a template correctly",
+			name: "can process a template",
 			template: `---
-name: test
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+	name: deployment-reader
+rules:
+- apiGroups: ["apps"]
+	resources: ["deployments"]
+	verbs: ["get", "watch", "list"]
 ---
-name: replacement1
-test: REPLACE_ME_1
+kind: Namespace
+metadata:
+	name: NAMESPACE
 ---
-name: replacement2
-test: REPLACE_ME_2
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+	name: NAME
+	namespace: NAMESPACE
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+	name: deployment-reader
+	namespace: NAMESPACE
+subjects:
+- kind: ServiceAccount
+	name: NAME
+	namespace: NAMESPACE
+roleRef:
+	kind: ClusterRole
+	name: deployment-reader
+	apiGroup: rbac.authorization.k8s.io
 `,
 			expected: expected{
 				err: nil,
 				evaluation: `---
-name: test
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+	name: deployment-reader
+rules:
+- apiGroups: ["apps"]
+	resources: ["deployments"]
+	verbs: ["get", "watch", "list"]
 ---
-name: replacement1
-test: foo
+kind: Namespace
+metadata:
+	name: foo
 ---
-name: replacement2
-test: zip
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+	name: baz
+	namespace: foo
 ---
-name: replacement1
-test: foo
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+	name: deployment-reader
+	namespace: foo
+subjects:
+- kind: ServiceAccount
+	name: baz
+	namespace: foo
+roleRef:
+	kind: ClusterRole
+	name: deployment-reader
+	apiGroup: rbac.authorization.k8s.io
 ---
-name: replacement2
-test: zap
+kind: Namespace
+metadata:
+	name: bar
 ---
-name: replacement1
-test: bar
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+	name: baz
+	namespace: bar
 ---
-name: replacement2
-test: zap
----
-name: replacement1
-test: bar
----
-name: replacement2
-test: zip
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+	name: deployment-reader
+	namespace: bar
+subjects:
+- kind: ServiceAccount
+	name: baz
+	namespace: bar
+roleRef:
+	kind: ClusterRole
+	name: deployment-reader
+	apiGroup: rbac.authorization.k8s.io
 `,
 			},
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{
-					"REPLACE_ME_1": {"foo", "bar"},
-					"REPLACE_ME_2": {"zip", "zap"},
+					"NAMESPACE": {"foo", "bar"},
+					"NAME":      {"baz"},
+				}),
+				combination.WithSolveAhead(),
+			),
+		},
+		{
+			name:     "processes an empty template",
+			template: ``,
+			expected: expected{
+				err:        nil,
+				evaluation: ``,
+			},
+			combinations: combination.NewStream(
+				combination.WithArgs(map[string][]string{
+					"NAMESPACE": {"foo", "bar"},
+					"NAME":      {"baz"},
 				}),
 				combination.WithSolveAhead(),
 			),
@@ -78,7 +149,7 @@ test: zip
 
 			evaluation, err := Evaluate(ctx, tt.template, tt.combinations)
 			if err != nil {
-				t.Fatal("recieved an error during evaluation:", err)
+				t.Fatal("received an error during evaluation:", err)
 			}
 
 			assert.Equal(t, tt.expected.err, err)

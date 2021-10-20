@@ -61,7 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to validate file generated: %v", err)
 	}
 
-	fmt.Println(string(generatedFile))
+	fmt.Println(generatedFile)
 
 	return nil
 }
