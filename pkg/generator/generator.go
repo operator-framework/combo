@@ -9,6 +9,9 @@ import (
 	"github.com/operator-framework/combo/pkg/combination"
 )
 
+// document stores a value string to represent the file
+// and a seen boolean to be used in the document generation
+// algorithm
 type document struct {
 	value string
 	seen  bool
@@ -16,10 +19,14 @@ type document struct {
 
 type documents []*document
 
+// Template contains an array of documents that can be
+// interacted with with its various functions.
 type Template struct {
 	documents documents
 }
 
+// has determines if any of the documents for the template
+// contains the specified string.
 func (t *Template) has(find string) bool {
 	for _, document := range t.documents {
 		if document.value == find {
@@ -29,6 +36,8 @@ func (t *Template) has(find string) bool {
 	return false
 }
 
+// build combines all of the template's documents to be
+// a valid yaml multidocument.
 func (t *Template) build() string {
 	var result string
 	for _, document := range t.documents {

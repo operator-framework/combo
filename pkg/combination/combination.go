@@ -8,7 +8,15 @@ import (
 	"github.com/jinzhu/copier"
 )
 
+// Set is a representation of one possible combination of
+// key/value pairs.
 type Set map[string]string
+
+// Stream is a representation of all possible combinations
+// its args. Can use either the Next() function to get each
+// combination one at a time or All() to get them all.
+// WithSolveAhead() ensures that the combinations are generated
+// before each call to Next() or All() but is only run once.
 type Stream struct {
 	combinations []Set
 	args         map[string][]string
@@ -16,9 +24,12 @@ type Stream struct {
 	solveAhead   bool
 	solveOnce    sync.Once
 }
+
+// streamOption is an option function that can be used within
+// a stream.
 type streamOption func(*Stream)
 
-// Specify used errors
+// Specify which errors this package can return
 var (
 	ErrNoArgsSet             = errors.New("args not set")
 	ErrCombinationsNotSolved = errors.New("combinations not yet solved")
@@ -41,14 +52,20 @@ func WithArgs(args map[string][]string) streamOption {
 }
 
 // WithSolveAhead specifies whether to solve before calling Next or All,
-// only occurs on the first call to Next or All.
+// only occurs on the first call to Next or All. By using this, the Stream
+// will solve all possible combinations of its args which could take a lot
+// of computation given a large enough input.
 func WithSolveAhead() streamOption {
 	return func(cs *Stream) {
 		cs.solveAhead = true
 	}
 }
 
-// Next gets the next combination from the stream
+// Next gets the next combination from the stream.
+// TODO: Currently this does not solve each combination iteratively and will
+//       need to do so in the future to ensure an optimal use of memory. This
+//       is currently more of a stub to allow consumer packages to maintain its
+// 		 interface.
 func (cs *Stream) Next(ctx context.Context) (Set, error) {
 	if cs.solveAhead {
 		cs.solveOnce.Do(cs.solve)
@@ -89,7 +106,7 @@ func (cs *Stream) All() ([]Set, error) {
 	return cs.combinations, nil
 }
 
-// Solve takes the current stream and its args to solve their combinations
+// solve takes the current stream and its args to solve their combinations
 func (cs *Stream) solve() {
 	// Return early if no args were sent
 	if len(cs.args) == 0 {
