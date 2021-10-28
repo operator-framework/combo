@@ -13,5 +13,6 @@ var (
 
 // Execute executes the root command.
 func Execute() error {
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	return rootCmd.Execute()
 }
