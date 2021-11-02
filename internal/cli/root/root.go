@@ -11,6 +11,7 @@ func NewCmd() *cobra.Command {
 		Short: "Create combinations of Kubernetes manifests",
 	}
 
+	// Disable the default auto-completion command
 	cmd.CompletionOptions.DisableDefaultCmd = true
 
 	cmd.AddCommand(

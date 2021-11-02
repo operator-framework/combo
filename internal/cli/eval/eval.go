@@ -16,6 +16,8 @@ var (
 	replacements map[string]string
 )
 
+// NewCommand creates a new eval command with its descriptions and
+// input requirements.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "eval",
@@ -34,6 +36,8 @@ func NewCommand() *cobra.Command {
 	return cmd
 }
 
+// run is used during the actual execution of the command to generate
+// combinations.
 func run(cmd *cobra.Command, args []string) error {
 	file, err := os.ReadFile(args[0])
 	if err != nil {
@@ -66,6 +70,8 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// formatReplacements takes a map[string]string from the args and formats them
+// in a way that the combinations package wants
 func formatReplacements(replacementsInput map[string]string) map[string][]string {
 	formattedReplacements := make(map[string][]string)
 	for key, val := range replacementsInput {
@@ -74,6 +80,7 @@ func formatReplacements(replacementsInput map[string]string) map[string][]string
 	return formattedReplacements
 }
 
+// validateFile is a simple wrapper to ensure the input/output of valid YAML
 func validateFile(file []byte) error {
 	var holder interface{}
 	return yaml.Unmarshal(file, &holder)
