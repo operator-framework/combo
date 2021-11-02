@@ -19,7 +19,7 @@ spec:
     - name: v1alpha1
       schema:
         openAPIV3Schema:
-          description: Combination is the Schema for the bundles API
+          description: Combination is the Schema for a combination
           type: object
           required:
             - spec
@@ -33,13 +33,13 @@ spec:
             metadata:
               type: object
             spec:
-              description: CombinationSpec defines the desired state of Combination
+              description: CombinationSpec defines arguments that replace parameters within the given template
               type: object
               required:
                 - template
               properties:
                 arguments:
-                  description: Arguments contains the list of values to use for each parameter.
+                  description: Arguments contains the list of values to use for each parameter in the combination.
                   type: object
                   minProperties: 1
                   additionalProperties:

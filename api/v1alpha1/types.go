@@ -49,13 +49,13 @@ type TemplateList struct {
 	Items           []Template `json:"items"`
 }
 
-// CombinationSpec defines the desired state of Combination
+// CombinationSpec defines arguments that replace parameters within the given template
 type CombinationSpec struct {
 	// Template is the name of the template to evaluate.
 	// +kubebuilder:validation:Pattern=[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*
 	Template string `json:"template"`
 
-	// Arguments contains the list of values to use for each parameter.
+	// Arguments contains the list of values to use for each parameter in the combination.
 	// +kubebuilder:validation:MinProperties:=1
 	Arguments map[string][]string `json:"arguments,omitempty"`
 }
@@ -73,7 +73,7 @@ type CombinationStatus struct {
 // +kubebuilder:resource:categories=combo,scope=Cluster
 // +kubebuilder:subresource:status
 
-// Combination is the Schema for the bundles API
+// Combination is the Schema for a combination
 type Combination struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
