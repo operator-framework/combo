@@ -32,8 +32,8 @@ format: ## Format the source code
 tidy: ## Update dependencies
 	$(Q)go mod tidy
 
-build:
-	$(Q)go build -o combo
+build-cli:
+	$(Q)go build -o combo internal/cli/main.go 
 
 CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
 
