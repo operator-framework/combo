@@ -8,26 +8,26 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-// Set is a representation of one possible combination of
-// key/value pairs.
-type Set map[string]string
-
 // Stream is a representation of all possible combinations
 // its args. Can use either the Next() function to get each
 // combination one at a time or All() to get them all.
 // WithSolveAhead() ensures that the combinations are generated
 // before each call to Next() or All() but is only run once.
-type Stream struct {
+type Stream interface {
+	Next(ctx context.Context) (Set, error)
+	All() ([]Set, error)
+}
+
+// Set is a representation of one possible combination of
+// key/value pairs.
+type Set map[string]string
+type streamImp struct {
 	combinations []Set
 	args         map[string][]string
 	current      int
 	solveAhead   bool
 	solveOnce    sync.Once
 }
-
-// streamOption is an option function that can be used within
-// a stream.
-type streamOption func(*Stream)
 
 // Specify which errors this package can return
 var (
@@ -36,17 +36,19 @@ var (
 )
 
 // NewStream creates a new stream and accepts stream options for it
+type streamOption func(*streamImp)
+
 func NewStream(options ...streamOption) Stream {
-	cs := &Stream{current: -1}
+	cs := &streamImp{current: -1}
 	for _, option := range options {
 		option(cs)
 	}
-	return *cs
+	return cs
 }
 
 // WithArgs specifies which args to utilize in the new stream
 func WithArgs(args map[string][]string) streamOption {
-	return func(cs *Stream) {
+	return func(cs *streamImp) {
 		cs.args = args
 	}
 }
@@ -56,7 +58,7 @@ func WithArgs(args map[string][]string) streamOption {
 // will solve all possible combinations of its args which could take a lot
 // of computation given a large enough input.
 func WithSolveAhead() streamOption {
-	return func(cs *Stream) {
+	return func(cs *streamImp) {
 		cs.solveAhead = true
 	}
 }
@@ -66,7 +68,7 @@ func WithSolveAhead() streamOption {
 //       need to do so in the future to ensure an optimal use of memory. This
 //       is currently more of a stub to allow consumer packages to maintain its
 // 		 interface.
-func (cs *Stream) Next(ctx context.Context) (Set, error) {
+func (cs *streamImp) Next(ctx context.Context) (Set, error) {
 	if cs.solveAhead {
 		cs.solveOnce.Do(cs.solve)
 	}
@@ -90,7 +92,7 @@ func (cs *Stream) Next(ctx context.Context) (Set, error) {
 }
 
 // All retrieves all of the combinations from the stream
-func (cs *Stream) All() ([]Set, error) {
+func (cs *streamImp) All() ([]Set, error) {
 	if cs.solveAhead {
 		cs.solveOnce.Do(cs.solve)
 	}
@@ -107,7 +109,7 @@ func (cs *Stream) All() ([]Set, error) {
 }
 
 // solve takes the current stream and its args to solve their combinations
-func (cs *Stream) solve() {
+func (cs *streamImp) solve() {
 	// Return early if no args were sent
 	if len(cs.args) == 0 {
 		return

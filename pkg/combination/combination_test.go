@@ -26,11 +26,56 @@ var combinationTests = []struct {
 		},
 	},
 	{
-		name:  "standard set of args",
-		input: getTestData(),
+		name: "standard set of args",
+		input: map[string][]string{
+			"TEST1": {"foo", "bar"},
+			"TEST2": {"zip", "zap"},
+			"TEST3": {"bip", "bap"},
+		},
 		expected: expected{
-			combinations: getExpectedCombos(),
-			err:          nil,
+			combinations: []Set{
+				{
+					"TEST1": "foo",
+					"TEST2": "zip",
+					"TEST3": "bip",
+				},
+				{
+					"TEST1": "foo",
+					"TEST2": "zap",
+					"TEST3": "bip",
+				},
+				{
+					"TEST1": "bar",
+					"TEST2": "zip",
+					"TEST3": "bip",
+				},
+				{
+					"TEST1": "bar",
+					"TEST2": "zap",
+					"TEST3": "bip",
+				},
+				{
+					"TEST1": "foo",
+					"TEST2": "zip",
+					"TEST3": "bap",
+				},
+				{
+					"TEST1": "foo",
+					"TEST2": "zap",
+					"TEST3": "bap",
+				},
+				{
+					"TEST1": "bar",
+					"TEST2": "zip",
+					"TEST3": "bap",
+				},
+				{
+					"TEST1": "bar",
+					"TEST2": "zap",
+					"TEST3": "bap",
+				},
+			},
+			err: nil,
 		},
 	},
 }
@@ -78,58 +123,5 @@ func TestNext(t *testing.T) {
 			}
 			require.ElementsMatch(t, got, tt.expected.combinations, "Combos generated incorrectly")
 		})
-	}
-}
-
-func getTestData() map[string][]string {
-	return map[string][]string{
-		"TEST1": {"foo", "bar"},
-		"TEST2": {"zip", "zap"},
-		"TEST3": {"bip", "bap"},
-	}
-}
-
-func getExpectedCombos() []Set {
-	return []Set{
-		{
-			"TEST1": "foo",
-			"TEST2": "zip",
-			"TEST3": "bip",
-		},
-		{
-			"TEST1": "foo",
-			"TEST2": "zap",
-			"TEST3": "bip",
-		},
-		{
-			"TEST1": "bar",
-			"TEST2": "zip",
-			"TEST3": "bip",
-		},
-		{
-			"TEST1": "bar",
-			"TEST2": "zap",
-			"TEST3": "bip",
-		},
-		{
-			"TEST1": "foo",
-			"TEST2": "zip",
-			"TEST3": "bap",
-		},
-		{
-			"TEST1": "foo",
-			"TEST2": "zap",
-			"TEST3": "bap",
-		},
-		{
-			"TEST1": "bar",
-			"TEST2": "zip",
-			"TEST3": "bap",
-		},
-		{
-			"TEST1": "bar",
-			"TEST2": "zap",
-			"TEST3": "bap",
-		},
 	}
 }
