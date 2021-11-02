@@ -7,6 +7,12 @@ import (
 	"github.com/jinzhu/copier"
 )
 
+// Specify which errors this package can return
+var (
+	ErrNoArgsSet             = errors.New("args not set")
+	ErrCombinationsNotSolved = errors.New("combinations not yet solved")
+)
+
 // Stream is a representation of all possible combinations
 // its args. Can use either the Next() function to get each
 // combination one at a time or All() to get them all.
@@ -23,15 +29,9 @@ type streamImp struct {
 	solved       bool
 }
 
-// Specify which errors this package can return
-var (
-	ErrNoArgsSet             = errors.New("args not set")
-	ErrCombinationsNotSolved = errors.New("combinations not yet solved")
-)
-
-// NewStream creates a new stream and accepts stream options for it
 type streamOption func(*streamImp)
 
+// NewStream creates a new stream and accepts stream options for it
 func NewStream(options ...streamOption) Stream {
 	cs := &streamImp{}
 	for _, option := range options {
