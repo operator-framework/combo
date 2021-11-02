@@ -3,7 +3,6 @@ package combination
 import (
 	"context"
 	"errors"
-	"sync"
 
 	"github.com/jinzhu/copier"
 )
@@ -20,9 +19,8 @@ type Stream interface {
 type streamImp struct {
 	combinations []map[string]string
 	args         map[string][]string
-	current      int
 	solveAhead   bool
-	solveOnce    sync.Once
+	solved       bool
 }
 
 // Specify which errors this package can return
@@ -35,7 +33,7 @@ var (
 type streamOption func(*streamImp)
 
 func NewStream(options ...streamOption) Stream {
-	cs := &streamImp{current: -1}
+	cs := &streamImp{}
 	for _, option := range options {
 		option(cs)
 	}
@@ -65,50 +63,52 @@ func WithSolveAhead() streamOption {
 //       is currently more of a stub to allow consumer packages to maintain its
 // 		 interface.
 func (cs *streamImp) Next(ctx context.Context) (map[string]string, error) {
-	if cs.solveAhead {
-		cs.solveOnce.Do(cs.solve)
+	if cs.solveAhead && !cs.solved {
+		if err := cs.solve(); err != nil {
+			return nil, err
+		}
+	}
+
+	if cs.solveAhead && !cs.solved {
+		cs.solve()
 	}
 
 	if len(cs.combinations) == 0 {
-		ctx.Err()
-		err := ErrCombinationsNotSolved
-		if len(cs.args) == 0 {
-			err = ErrNoArgsSet
+		if cs.solved {
+			return nil, nil
 		}
-		return nil, err
+		return nil, ErrCombinationsNotSolved
 	}
 
-	if cs.current == len(cs.combinations)-1 {
-		return nil, nil
-	}
+	next := cs.combinations[0]
+	cs.combinations = cs.combinations[1:]
 
-	cs.current++
-
-	return cs.combinations[cs.current], nil
+	return next, nil
 }
 
 // All retrieves all of the combinations from the stream
 func (cs *streamImp) All() ([]map[string]string, error) {
-	if cs.solveAhead {
-		cs.solveOnce.Do(cs.solve)
+	if cs.solveAhead && !cs.solved {
+		if err := cs.solve(); err != nil {
+			return nil, err
+		}
 	}
 
 	if len(cs.combinations) == 0 {
-		err := ErrCombinationsNotSolved
-		if len(cs.args) == 0 {
-			err = ErrNoArgsSet
+		if cs.solved {
+			return nil, nil
 		}
-		return nil, err
+		return nil, ErrCombinationsNotSolved
 	}
 
 	return cs.combinations, nil
 }
 
 // solve takes the current stream and its args to solve their combinations
-func (cs *streamImp) solve() {
+func (cs *streamImp) solve() error {
 	// Return early if no args were sent
 	if len(cs.args) == 0 {
-		return
+		return ErrNoArgsSet
 	}
 
 	combos := []map[string]string{}
@@ -142,5 +142,9 @@ func (cs *streamImp) solve() {
 
 	// Recurse to produce combinations
 	recurse(map[string]string{}, 0)
+
 	cs.combinations = combos
+	cs.solved = true
+
+	return nil
 }
