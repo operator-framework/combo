@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/operator-framework/combo/pkg/combination"
+	"github.com/operator-framework/combo/test/assets/generatorTestData"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,101 +24,11 @@ func TestEvaluate(t *testing.T) {
 		expected     expected
 	}{
 		{
-			name: "can process a template",
-			template: `---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-	name: deployment-reader
-rules:
-- apiGroups: ["apps"]
-	resources: ["deployments"]
-	verbs: ["get", "watch", "list"]
----
-kind: Namespace
-metadata:
-	name: NAMESPACE
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-	name: NAME
-	namespace: NAMESPACE
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-	name: deployment-reader
-	namespace: NAMESPACE
-subjects:
-- kind: ServiceAccount
-	name: NAME
-	namespace: NAMESPACE
-roleRef:
-	kind: ClusterRole
-	name: deployment-reader
-	apiGroup: rbac.authorization.k8s.io
-`,
+			name:     "can process a template",
+			template: generatorTestData.EvaluateInput,
 			expected: expected{
-				err: nil,
-				evaluation: `---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-	name: deployment-reader
-rules:
-- apiGroups: ["apps"]
-	resources: ["deployments"]
-	verbs: ["get", "watch", "list"]
----
-kind: Namespace
-metadata:
-	name: foo
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-	name: baz
-	namespace: foo
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-	name: deployment-reader
-	namespace: foo
-subjects:
-- kind: ServiceAccount
-	name: baz
-	namespace: foo
-roleRef:
-	kind: ClusterRole
-	name: deployment-reader
-	apiGroup: rbac.authorization.k8s.io
----
-kind: Namespace
-metadata:
-	name: bar
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-	name: baz
-	namespace: bar
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-	name: deployment-reader
-	namespace: bar
-subjects:
-- kind: ServiceAccount
-	name: baz
-	namespace: bar
-roleRef:
-	kind: ClusterRole
-	name: deployment-reader
-	apiGroup: rbac.authorization.k8s.io
-`,
+				err:        nil,
+				evaluation: generatorTestData.EvaluateOutput,
 			},
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{

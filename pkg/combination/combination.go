@@ -14,15 +14,11 @@ import (
 // WithSolveAhead() ensures that the combinations are generated
 // before each call to Next() or All() but is only run once.
 type Stream interface {
-	Next(ctx context.Context) (Set, error)
-	All() ([]Set, error)
+	Next(ctx context.Context) (map[string]string, error)
+	All() ([]map[string]string, error)
 }
-
-// Set is a representation of one possible combination of
-// key/value pairs.
-type Set map[string]string
 type streamImp struct {
-	combinations []Set
+	combinations []map[string]string
 	args         map[string][]string
 	current      int
 	solveAhead   bool
@@ -68,7 +64,7 @@ func WithSolveAhead() streamOption {
 //       need to do so in the future to ensure an optimal use of memory. This
 //       is currently more of a stub to allow consumer packages to maintain its
 // 		 interface.
-func (cs *streamImp) Next(ctx context.Context) (Set, error) {
+func (cs *streamImp) Next(ctx context.Context) (map[string]string, error) {
 	if cs.solveAhead {
 		cs.solveOnce.Do(cs.solve)
 	}
@@ -92,7 +88,7 @@ func (cs *streamImp) Next(ctx context.Context) (Set, error) {
 }
 
 // All retrieves all of the combinations from the stream
-func (cs *streamImp) All() ([]Set, error) {
+func (cs *streamImp) All() ([]map[string]string, error) {
 	if cs.solveAhead {
 		cs.solveOnce.Do(cs.solve)
 	}
@@ -115,7 +111,7 @@ func (cs *streamImp) solve() {
 		return
 	}
 
-	combos := []Set{}
+	combos := []map[string]string{}
 
 	// Create holder arrays to process the incoming args
 	var arrays [][]string
@@ -129,8 +125,8 @@ func (cs *streamImp) solve() {
 	max := len(arrays) - 1
 
 	// Define recursive function for getting combinations
-	var helper func(combo map[string]string, i int)
-	helper = func(combo map[string]string, i int) {
+	var recurse func(combo map[string]string, i int)
+	recurse = func(combo map[string]string, i int) {
 		for _, val := range arrays[i] {
 			combo[replacements[i]] = val
 			if i == max {
@@ -139,12 +135,12 @@ func (cs *streamImp) solve() {
 				copier.Copy(&comboCopy, &combo)
 				combos = append(combos, comboCopy)
 			} else {
-				helper(combo, i+1)
+				recurse(combo, i+1)
 			}
 		}
 	}
 
 	// Recurse to produce combinations
-	helper(map[string]string{}, 0)
+	recurse(map[string]string{}, 0)
 	cs.combinations = combos
 }

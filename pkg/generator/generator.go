@@ -48,7 +48,7 @@ func (t *Template) build() string {
 }
 
 // with builds the template documents with the combination set specified
-func (t *Template) with(combo combination.Set, to Template) Template {
+func (t *Template) with(combo map[string]string, to Template) Template {
 	// For each document in the template evaluate the current combination set
 	for _, doc := range t.documents {
 		incDoc := doc.value

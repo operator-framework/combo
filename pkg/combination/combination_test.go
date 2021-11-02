@@ -4,12 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/operator-framework/combo/test/assets/combinationTestData"
 	"github.com/stretchr/testify/require"
 )
 
 type expected struct {
 	err          error
-	combinations []Set
+	combinations []map[string]string
 }
 
 var combinationTests = []struct {
@@ -21,61 +22,16 @@ var combinationTests = []struct {
 		name:  "empty map input",
 		input: map[string][]string{},
 		expected: expected{
-			combinations: []Set{},
+			combinations: []map[string]string{},
 			err:          ErrNoArgsSet,
 		},
 	},
 	{
-		name: "standard set of args",
-		input: map[string][]string{
-			"TEST1": {"foo", "bar"},
-			"TEST2": {"zip", "zap"},
-			"TEST3": {"bip", "bap"},
-		},
+		name:  "standard set of args",
+		input: combinationTestData.CombinationInput,
 		expected: expected{
-			combinations: []Set{
-				{
-					"TEST1": "foo",
-					"TEST2": "zip",
-					"TEST3": "bip",
-				},
-				{
-					"TEST1": "foo",
-					"TEST2": "zap",
-					"TEST3": "bip",
-				},
-				{
-					"TEST1": "bar",
-					"TEST2": "zip",
-					"TEST3": "bip",
-				},
-				{
-					"TEST1": "bar",
-					"TEST2": "zap",
-					"TEST3": "bip",
-				},
-				{
-					"TEST1": "foo",
-					"TEST2": "zip",
-					"TEST3": "bap",
-				},
-				{
-					"TEST1": "foo",
-					"TEST2": "zap",
-					"TEST3": "bap",
-				},
-				{
-					"TEST1": "bar",
-					"TEST2": "zip",
-					"TEST3": "bap",
-				},
-				{
-					"TEST1": "bar",
-					"TEST2": "zap",
-					"TEST3": "bap",
-				},
-			},
-			err: nil,
+			combinations: combinationTestData.CombinationOutput,
+			err:          nil,
 		},
 	},
 }
@@ -104,7 +60,7 @@ func TestNext(t *testing.T) {
 				WithSolveAhead(),
 			)
 
-			var got []Set
+			var got []map[string]string
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
