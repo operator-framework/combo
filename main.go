@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/operator-framework/combo/internal/cli/root"
+	"github.com/operator-framework/combo/cmd"
 )
 
 func main() {
-	root.NewCmd().Execute()
+	cmd.Execute()
 }

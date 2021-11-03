@@ -1,4 +1,4 @@
-package eval
+package cmd
 
 import (
 	"context"
@@ -14,26 +14,23 @@ import (
 
 var (
 	replacements map[string]string
-)
-
-// NewCommand creates a new eval command with its descriptions and
-// input requirements.
-func NewCommand() *cobra.Command {
-	cmd := &cobra.Command{
+	evalCmd      = &cobra.Command{
 		Use:   "eval",
 		Short: "Evaluate the combinations for a file at the given path",
 		Long: `Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
-	
+
 	Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
-		`,
+	`,
 		RunE: run,
 		Args: cobra.ExactArgs(1),
 	}
+)
 
-	cmd.Flags().StringToStringVarP(&replacements, "replacement", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
-	cmd.MarkFlagRequired("replacement")
+func init() {
+	rootCmd.AddCommand(evalCmd)
+	evalCmd.Flags().StringToStringVarP(&replacements, "replacement", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
+	evalCmd.MarkFlagRequired("replacement")
 
-	return cmd
 }
 
 // run is used during the actual execution of the command to generate
