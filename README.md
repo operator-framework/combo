@@ -1,113 +1,121 @@
 # combo
-`combo` is a [Kubernetes controller](https://kubernetes.io/docs/concepts/architecture/controller/) that generates and applies resources for all combinations of a manifest template and its arguments.
 
-## When to use 
-`Combo` is designed to be a sample operator that can be utilized in our CI/CD, packaged in [RukPak](https://github.com/operator-framework/rukpak), and ultimately provide the team a window into the developer experience of being on [OLM](https://github.com/operator-framework/operator-lifecycle-manager). This is the primary purpose of Combo's existance. In addition to this, there were not easy ways to generate combinations of manifests with existing tools - thus the idea of `Combo` emerged. This functionality is not currently found in things like [Helm](https://helm.sh/) and [OpenShift Templates](https://docs.openshift.com/container-platform/4.9/openshift_images/using-templates.html) easily.
+`combo` is a [Kubernetes controller](https://kubernetes.io/docs/concepts/architecture/controller/) that generates and applies resources for __all combinations__ of a manifest template and its arguments.
 
-If you do not need to generate the combinations of Kubernetes manifests, this tool will not provide different functionality than other templating engines. The most valuable use case of `Combo` is when the combination of manifests with arguments is needed.
+## What on earth does "all combinations" mean!?
 
-## On the command line
-Directly evaluate a template from stdin:
+For example, say `combo` is given a template containing 1 _parameter_  -- i.e. distinct token to replaced -- and 2 _arguments_  for that parameter (value to replace a parameter with), then `combo` will output 2 _evaluations_ (one for each argument).
 
-```sh
-$ cat <<EOF | combo eval -a 'NAMESPACE=foo,bar' -a 'NAME=baz' -
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: deployment-reader
-rules:
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "watch", "list"]
----
-kind: Namespace
-metadata:
-  name: NAMESPACE
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: NAME
-  namespace: NAMESPACE
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: deployment-reader
-  namespace: NAMESPACE
-subjects:
-- kind: ServiceAccount
-  name: NAME
-  namespace: NAMESPACE
-roleRef:
-  kind: ClusterRole
-  name: deployment-reader
-  apiGroup: rbac.authorization.k8s.io
-EOF
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: deployment-reader
-rules:
-- apiGroups: ["apps"]
-  resources: ["deployments"]
-  verbs: ["get", "watch", "list"]
----
-kind: Namespace
-metadata:
-  name: foo
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: baz
-  namespace: foo
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: deployment-reader
-  namespace: foo
-subjects:
-- kind: ServiceAccount
-  name: baz
-  namespace: foo
-roleRef:
-  kind: ClusterRole
-  name: deployment-reader
-  apiGroup: rbac.authorization.k8s.io
----
-kind: Namespace
-metadata:
-  name: bar
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: baz
-  namespace: bar
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: deployment-reader
-  namespace: bar
-subjects:
-- kind: ServiceAccount
-  name: baz
-  namespace: bar
-roleRef:
-  kind: ClusterRole
-  name: deployment-reader
-  apiGroup: rbac.authorization.k8s.io
+e.g.
+
+_template:_
+
+```yaml
+PARAM_1
+``` 
+
+_arguments:_
+
+```
+PARAM_1:
+- a
+- b
 ```
 
-### As a controller
-If `combo` is running as a controller in the current kubectl context's cluster, create a `Template`:
+_evaluations:_
 
-```sh
+```yaml
+---
+a
+---
+b
+```
+
+Simple enough, right? What about something more advanced...
+
+Suppose we give `combo` a template with 2 parameters and 3 arguments for each parameter.
+
+e.g.
+
+_template:_
+
+```yaml
+PARAM_1: PARAM_2
+```
+_arguments:_
+
+```yaml
+PARAM_1:
+- a
+- b
+PARAM_2:
+- c
+- d
+- e
+```
+
+_evaluations:_
+
+```yaml
+---
+a: c
+---
+a: d
+---
+a: e
+---
+b: c
+---
+b: d
+---
+b: e
+```
+
+## Wait, can't Helm do this?
+
+It could, __but__ getting this experience from Helm would require:
+- the use of nested Go Template loops
+- carrying along the rest of the ecosystem; e.g. I don't want to think about Helm charts for something this simple
+
+## Can I generate combinations locally?
+Yes! There is a built in CLI interaction via the binary. Let's look at the same example we used for the controller in this context. 
+
+First, create a simple YAML file that defines two arguments. 
+
+```yaml
+# ./sample_input.yaml
+PARAM_1: PARAM_2
+```
+
+Next, go ahead and run the `eval` subcommand.
+
+```shell
+$ make build-cli
+$ ./combo eval -r PARAM_1=a,b -r PARAM_2=c,d,e sample_input.yaml
+```
+
+This will run the same logic that the controller utilizes to generate combinations and output them to stdout. The above command will produce the following:
+
+```yaml
+---
+a: c
+---
+a: d
+---
+a: e
+---
+b: c
+---
+b: d
+---
+b: e
+```
+
+## Primary use cases
+
+To parameterize RBAC and other namespace-scoped resources so they can be stamped out as necessary later on.
+
+```shell
 $ cat <<EOF | kubectl create -f -
 apiVersion: combo.io/v1alpha1
 kind: Template
@@ -150,9 +158,9 @@ spec:
 EOF
 ```
 
-Assuming the existance of the `feature-controller` and `feature-user` `ClusterRoles` as well as the `feature`, `staging`, and `prod` `Namespaces`, instantiate all resource/argument combinations with a `Combination`:
+Assuming the existence of the `feature-controller` and `feature-user` `ClusterRoles` as well as the `feature`, `staging`, and `prod` `Namespaces`, instantiate all resource/argument combinations with a `Combination`:
 
-```sh
+```shell
 $ cat <<EOF | kubectl create -f -
 apiVersion: combo.io/v1alpha1
 kind: Combination
@@ -175,7 +183,7 @@ EOF
 
 combo then surfaces the evaluated template in the status:
 
-```sh
+```shell
 $ kubectl get combination -o yaml
 apiVersion: combo.io/v1alpha1
 kind: Combination
@@ -224,3 +232,26 @@ status:
       apiGroup: rbac.authorization.k8s.io
       ...
 ```
+
+## Ulterior motives
+
+Our "hidden" agenda with `combo` is for it to:
+- serve as an example of best-practices when building operators
+- be used to dog food operator-framework packaging formats (e.g. OLM, rukpak, etc)
+- become a dependency of operators that require post-install configuration (e.g. RBAC scoping, secret creation, etc)
+- serve as a cruft-free way to up-skill new maintainers through easy contributions
+
+## Planned Features
+
+Below you will find the planned and currently implemented features. Work of Combo is currently in active development and thus this list will be kept up-to-date as progress is made.
+
+- [x] CLI 
+- [ ] Controller
+- [ ] CI/CD 
+    - [X] Unit tests
+    - [X] Linting
+    - [ ] E2E tests
+- [ ] Contribution guidelines
+- [ ] Add to Red Hat Operators
+- [ ] Package in OLM
+- [ ] Package in Deppy/Rukpak
