@@ -69,10 +69,6 @@ func (cs *streamImp) Next(ctx context.Context) (map[string]string, error) {
 		}
 	}
 
-	if cs.solveAhead && !cs.solved {
-		cs.solve()
-	}
-
 	if len(cs.combinations) == 0 {
 		if cs.solved {
 			return nil, nil
@@ -125,6 +121,7 @@ func (cs *streamImp) solve() error {
 	max := len(arrays) - 1
 
 	// Define recursive function for getting combinations
+	var err error
 	var recurse func(combo map[string]string, i int)
 	recurse = func(combo map[string]string, i int) {
 		for _, val := range arrays[i] {
@@ -132,7 +129,7 @@ func (cs *streamImp) solve() error {
 			if i == max {
 				// Append a copy of the map to the combos
 				comboCopy := map[string]string{}
-				copier.Copy(&comboCopy, &combo)
+				err = copier.Copy(&comboCopy, &combo)
 				combos = append(combos, comboCopy)
 			} else {
 				recurse(combo, i+1)
@@ -142,6 +139,9 @@ func (cs *streamImp) solve() error {
 
 	// Recurse to produce combinations
 	recurse(map[string]string{}, 0)
+	if err != nil {
+		return err
+	}
 
 	cs.combinations = combos
 	cs.solved = true
