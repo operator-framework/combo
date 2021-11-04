@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -29,7 +30,9 @@ var (
 func init() {
 	rootCmd.AddCommand(evalCmd)
 	evalCmd.Flags().StringToStringVarP(&replacements, "replacement", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
-	evalCmd.MarkFlagRequired("replacement")
+	if err := evalCmd.MarkFlagRequired("replacement"); err != nil {
+		log.Fatalf("Failed to initialize binary %v", err)
+	}
 
 }
 

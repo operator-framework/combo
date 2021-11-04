@@ -4,6 +4,8 @@ import "testing"
 
 func TestRoot(t *testing.T) {
 	t.Run("Execute", func(t *testing.T) {
-		Execute()
+		if err := Execute(); err != nil {
+			t.Fatalf("error occurred while executing command: %v", err)
+		}
 	})
 }
