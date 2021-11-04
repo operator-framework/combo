@@ -1,13 +1,15 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"os"
 
 	"github.com/operator-framework/combo/cmd"
 )
 
 func main() {
 	if err := cmd.Execute(); err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
 	}
 }
