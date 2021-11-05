@@ -12,7 +12,7 @@ _template:_
 
 ```yaml
 PARAM_1
-``` 
+```
 
 _arguments:_
 
@@ -74,13 +74,15 @@ b: e
 ## Wait, can't Helm do this?
 
 It could, __but__ getting this experience from Helm would require:
+
 - the use of nested Go Template loops
 - carrying along the rest of the ecosystem; e.g. I don't want to think about Helm charts for something this simple
 
 ## Can I generate combinations locally?
-Yes! There is a built in CLI interaction via the binary. Let's look at the same example we used for the controller in this context. 
 
-First, create a simple YAML file that defines two arguments. 
+Yes! There is a built in CLI interaction via the binary. Let's look at the same example we used for the controller in this context.
+
+First, create a simple YAML file that defines two arguments.
 
 ```yaml
 # ./sample_input.yaml
@@ -90,8 +92,8 @@ PARAM_1: PARAM_2
 Next, go ahead and run the `eval` subcommand.
 
 ```shell
-$ make build-cli
-$ ./combo eval -r PARAM_1=a,b -r PARAM_2=c,d,e sample_input.yaml
+make build-cli
+./combo eval -r PARAM_1=a,b -r PARAM_2=c,d,e sample_input.yaml
 ```
 
 This will run the same logic that the controller utilizes to generate combinations and output them to stdout. The above command will produce the following:
@@ -236,6 +238,7 @@ status:
 ## Ulterior motives
 
 Our "hidden" agenda with `combo` is for it to:
+
 - serve as an example of best-practices when building operators
 - be used to dog food operator-framework packaging formats (e.g. OLM, rukpak, etc)
 - become a dependency of operators that require post-install configuration (e.g. RBAC scoping, secret creation, etc)
@@ -243,15 +246,10 @@ Our "hidden" agenda with `combo` is for it to:
 
 ## Planned Features
 
-Below you will find the planned and currently implemented features. Work of Combo is currently in active development and thus this list will be kept up-to-date as progress is made.
+The combo project is currently in active development and you can find up-to-date, tracked work in the [Combo Project Board][roadmap].
 
-- [x] CLI 
-- [ ] Controller
-- [ ] CI/CD 
-    - [X] Unit tests
-    - [X] Linting
-    - [ ] E2E tests
-- [ ] Contribution guidelines
-- [ ] Add to Red Hat Operators
-- [ ] Package in OLM
-- [ ] Package in Deppy/Rukpak
+Introducing or discussing new roadmap items can be done by opening an issue.
+
+Before opening an issue, it's recommended to check whether a similar issue is already open to avoid duplicating roadmap efforts.
+
+[roadmap]: <https://github.com/operator-framework/combo/projects/1>
