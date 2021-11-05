@@ -15,14 +15,18 @@ import (
 var (
 	replacements map[string]string
 	evalCmd      = &cobra.Command{
-		Use:   "eval",
+		Use:   "eval [file]",
 		Short: "Evaluate the combinations for a file at the given path",
-		Long: `Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
+		Long: `
+Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
 
-	Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
+Note: the combo binary requires the --replacement flag to be explicitly set.
+
+The replacements flag allows users to specify a series of key value pairs in the form of KEY=VALUE.
+
+Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 	`,
 		RunE: run,
-		Args: cobra.ExactArgs(1),
 	}
 )
 
