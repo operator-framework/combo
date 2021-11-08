@@ -58,7 +58,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 			}
 
 			if err := validateFile(file); err != nil {
-				return fmt.Errorf("failed to validate file specified: %v", err)
+				return fmt.Errorf("failed to validate file specified: %w", err)
 			}
 
 			combinations := combination.NewStream(
@@ -75,7 +75,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 			}
 
 			if err := validateFile([]byte(generatedFile)); err != nil {
-				return fmt.Errorf("failed to validate file generated: %v", err)
+				return fmt.Errorf("failed to validate file generated: %w", err)
 			}
 
 			fmt.Println(generatedFile)

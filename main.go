@@ -9,8 +9,7 @@ import (
 )
 
 func main() {
-	log := zap.New()
-	if err := cmd.Execute(log); err != nil {
+	if err := cmd.Execute(zap.New()); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
