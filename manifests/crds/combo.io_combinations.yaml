@@ -40,12 +40,24 @@ spec:
               properties:
                 arguments:
                   description: Arguments contains the list of values to use for each parameter in the combination.
-                  type: object
-                  minProperties: 1
-                  additionalProperties:
-                    type: array
-                    items:
-                      type: string
+                  type: array
+                  minItems: 1
+                  items:
+                    description: Argument defines a key and values for it that will be replaced in a template
+                    type: object
+                    required:
+                      - key
+                      - values
+                    properties:
+                      key:
+                        description: Key defines what is going to be replaced in the template
+                        type: string
+                      values:
+                        description: Values defines the options to replace the defined key
+                        type: array
+                        minItems: 1
+                        items:
+                          type: string
                 template:
                   description: Template is the name of the template to evaluate.
                   type: string

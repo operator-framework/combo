@@ -25,6 +25,4 @@ jobs:
       - name: Build the container
         run: |
           make build-container
-      - name: Run the container
-        run: |
-          docker run quay.io/operator-framework/combo:dev
+
