@@ -1,0 +1,3 @@
+run:
+  # Default timeout is 1m, up to give more room
+  timeout: 4m

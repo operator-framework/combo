@@ -32,7 +32,7 @@ generate: ## Generate code and manifests
 format: ## Format the source code
 	$(Q)go fmt ./...
 
-lint: ## Run golangci-lin
+lint: ## Run golangci-lint
 	$(Q)go run github.com/golangci/golangci-lint/cmd/golangci-lint run
 
 verify: tidy generate format lint ## Verify the current code generation and lint
