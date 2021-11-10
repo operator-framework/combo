@@ -20,7 +20,7 @@ jobs:
         run: |
           make build-cli
       - name: Notify PR author when tests have failed
-        if: ${{ failure() && github.event.pull_request.draft == false }}
+        if: ${{ failure() }}
         uses: actions/github-script@v5
         with:
           script: |
