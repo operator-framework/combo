@@ -12,6 +12,7 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+
       - name: Install Go 1.17
         uses: actions/setup-go@v2
         with:
@@ -20,3 +21,19 @@ jobs:
         run: go mod vendor
       - name: Run sanity checks
         run: make verify
+      - name: Notify PR author when tests have failed
+        if: ${{ failure() && github.event.pull_request.draft == false }}
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const comment = `
+            @${{github.actor}} The ${{ github.workflow }} workflow has *failed*.
+
+            Check out the [action page](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for more details on why the workflow had failed.
+            `
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment,
+            })
