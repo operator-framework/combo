@@ -26,7 +26,7 @@ The replacements flag allows users to specify a series of key value pairs in the
 
 Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 	`,
-		RunE: run,
+		RunE: run,;;;
 	}
 )
 
