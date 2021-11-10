@@ -1,4 +1,4 @@
-name: ci
+name: sanity
 on:
   push:
     branches:
