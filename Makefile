@@ -39,7 +39,7 @@ verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
 build-cli: ## Build the CLI binary
-	$(Q)go build -o ./bin/combo
+	$(Q)go build -a -o ./bin/combo
 
 IMAGE_REPO=quay.io/operator-framework/combo
 IMAGE_TAG=dev
