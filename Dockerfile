@@ -24,4 +24,4 @@ COPY --from=builder /build/bin/combo .
 
 EXPOSE 8080
 
-CMD ["/bin/combo", "run"]
+CMD ["/bin/combo"]
