@@ -19,6 +19,9 @@ spec:
       containers:
       - name: combo
         image: quay.io/operator-framework/combo:latest
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/combo
+        - run
         ports:
         - containerPort: 8080
