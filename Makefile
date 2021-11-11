@@ -39,11 +39,11 @@ verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
 build-cli: ## Build the CLI binary
-	$(Q)go build -o combo
+	$(Q)go build -o ./bin/combo
 
 TAG=quay.io/operator-framework/combo
 build-container: ## Build the Combo container
-	docker build . --tag=$(TAG)
+	docker build . -f Dockerfile --tag=$(TAG)
 
 CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
 

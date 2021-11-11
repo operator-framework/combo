@@ -1,17 +1,25 @@
-FROM golang:1.17
+FROM golang:1.17-buster AS builder
 
-WORKDIR /
+WORKDIR /build
 
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
 COPY api api
 COPY cmd cmd
 COPY pkg pkg
-COPY test test
 COPY main.go main.go
-COPY Makefile Makefile
 COPY tools.go tools.go
-COPY go.mod go.mod
-COPY go.sum go.sum
+COPY Makefile Makefile
 
 RUN make build-cli
 
-CMD ./bin/combo run
+FROM golang:1.17-buster
+
+WORKDIR /
+
+COPY --from=builder /build/bin/combo /bin
+
+EXPOSE 8080
+
+CMD ["combo"]
