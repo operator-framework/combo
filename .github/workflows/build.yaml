@@ -19,3 +19,6 @@ jobs:
       - name: Build the CLI
         run: |
           make build-cli
+      - name: Build the container
+        run: |
+          make build-container
