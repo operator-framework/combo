@@ -70,7 +70,7 @@ func (t *Template) with(combo map[string]string, to Template) Template {
 // Evaluate uses specified template and combination stream to build/return the combinations of
 // documents built together
 func Evaluate(ctx context.Context, stringTemplate string, combinations combination.Stream) (string, error) {
-	// Separate the documents by the yaml seperator and build a template with them
+	// Separate the documents by the yaml separator and build a template with them
 	docs := strings.Split(stringTemplate, "---")
 	var splitTemplate Template
 	for _, doc := range docs {

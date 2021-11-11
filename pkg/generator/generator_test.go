@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/operator-framework/combo/pkg/combination"
-	"github.com/operator-framework/combo/test/assets/generatorTestData"
+	testdata "github.com/operator-framework/combo/test/assets/generator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,10 +25,10 @@ func TestEvaluate(t *testing.T) {
 	}{
 		{
 			name:     "can process a template",
-			template: generatorTestData.EvaluateInput,
+			template: testdata.EvaluateInput,
 			expected: expected{
 				err:        nil,
-				evaluation: generatorTestData.EvaluateOutput,
+				evaluation: testdata.EvaluateOutput,
 			},
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{
@@ -66,8 +66,8 @@ func TestEvaluate(t *testing.T) {
 			assert.Equal(t, tt.expected.err, err)
 			require.ElementsMatch(
 				t,
-				strings.Split(string(tt.expected.evaluation), "---"),
-				strings.Split(string(evaluation), "---"),
+				strings.Split(tt.expected.evaluation, "---"),
+				strings.Split(evaluation, "---"),
 				"Document evaluations generated incorrectly")
 		})
 	}

@@ -37,7 +37,6 @@ func init() {
 		fmt.Fprintf(os.Stderr, "failed to initialize eval: %v", err)
 		os.Exit(1)
 	}
-
 }
 
 // run is used during the actual execution of the command to generate
@@ -49,7 +48,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := validateFile(file); err != nil {
-		return fmt.Errorf("failed to validate file specified: %v", err)
+		return fmt.Errorf("failed to validate file specified: %w", err)
 	}
 
 	combinations := combination.NewStream(
@@ -66,7 +65,7 @@ func run(cmd *cobra.Command, args []string) error {
 	}
 
 	if err := validateFile([]byte(generatedFile)); err != nil {
-		return fmt.Errorf("failed to validate file generated: %v", err)
+		return fmt.Errorf("failed to validate file generated: %w", err)
 	}
 
 	fmt.Println(generatedFile)
