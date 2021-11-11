@@ -38,8 +38,13 @@ lint: ## Run golangci-lin
 verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
-build-cli:
-	$(Q)go build -o combo
+build-cli: ## Build the CLI binary
+	$(Q)go build -a -o ./bin/combo
+
+IMAGE_REPO=quay.io/operator-framework/combo
+IMAGE_TAG=dev
+build-container: ## Build the Combo container. Accepts IMAGE_REPO and IMAGE_TAG overrides.
+	docker build . -f Dockerfile -t $(IMAGE_REPO):$(IMAGE_TAG)
 
 CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
 
