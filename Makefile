@@ -41,9 +41,10 @@ verify: tidy generate format lint ## Verify the current code generation and lint
 build-cli: ## Build the CLI binary
 	$(Q)go build -o ./bin/combo
 
-TAG=quay.io/operator-framework/combo
-build-container: ## Build the Combo container
-	docker build . -f Dockerfile --tag=$(TAG)
+IMAGE_REPO=quay.io/operator-framework/combo
+IMAGE_TAG=dev
+build-container: ## Build the Combo container. Accepts IMAGE_REPO and IMAGE_TAG overrides.
+	docker build . -f Dockerfile -t $(IMAGE_REPO):$(IMAGE_TAG)
 
 CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
 
