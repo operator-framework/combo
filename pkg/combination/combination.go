@@ -29,10 +29,10 @@ type streamImp struct {
 	solved       bool
 }
 
-type streamOption func(*streamImp)
+type StreamOption func(*streamImp)
 
 // NewStream creates a new stream and accepts stream options for it
-func NewStream(options ...streamOption) Stream {
+func NewStream(options ...StreamOption) Stream {
 	cs := &streamImp{}
 	for _, option := range options {
 		option(cs)
@@ -41,7 +41,7 @@ func NewStream(options ...streamOption) Stream {
 }
 
 // WithArgs specifies which args to utilize in the new stream
-func WithArgs(args map[string][]string) streamOption {
+func WithArgs(args map[string][]string) StreamOption {
 	return func(cs *streamImp) {
 		cs.args = args
 	}
@@ -51,7 +51,7 @@ func WithArgs(args map[string][]string) streamOption {
 // only occurs on the first call to Next or All. By using this, the Stream
 // will solve all possible combinations of its args which could take a lot
 // of computation given a large enough input.
-func WithSolveAhead() streamOption {
+func WithSolveAhead() StreamOption {
 	return func(cs *streamImp) {
 		cs.solveAhead = true
 	}
@@ -110,8 +110,8 @@ func (cs *streamImp) solve() error {
 	combos := []map[string]string{}
 
 	// Create holder arrays to process the incoming args
-	var arrays [][]string
-	var replacements []string
+	arrays := [][]string{}
+	replacements := []string{}
 	for key, val := range cs.args {
 		arrays = append(arrays, val)
 		replacements = append(replacements, key)

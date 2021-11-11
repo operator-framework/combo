@@ -1,6 +1,6 @@
-package generatorTestData
+package testdata
 
-var EvaluateInput string = `---
+var EvaluateInput = `---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -35,7 +35,7 @@ roleRef:
 	apiGroup: rbac.authorization.k8s.io
 `
 
-var EvaluateOutput string = `---
+var EvaluateOutput = `---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

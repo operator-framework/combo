@@ -2,9 +2,10 @@ package combination
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/operator-framework/combo/test/assets/combinationTestData"
+	testdata "github.com/operator-framework/combo/test/assets/combination"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,9 +29,9 @@ var combinationTests = []struct {
 	},
 	{
 		name:  "standard set of args",
-		input: combinationTestData.CombinationInput,
+		input: testdata.CombinationInput,
 		expected: expected{
-			combinations: combinationTestData.CombinationOutput,
+			combinations: testdata.CombinationOutput,
 			err:          nil,
 		},
 	},
@@ -44,7 +45,7 @@ func TestAll(t *testing.T) {
 				WithSolveAhead(),
 			)
 			got, err := combinationStream.All()
-			if err != tt.expected.err {
+			if !errors.Is(err, tt.expected.err) {
 				t.Fatal("error received while retreiving all combinations:", err)
 			}
 			require.ElementsMatch(t, got, tt.expected.combinations, "Combos generated incorrectly")
@@ -67,7 +68,7 @@ func TestNext(t *testing.T) {
 
 			for {
 				next, err := combinationStream.Next(ctx)
-				if err != tt.expected.err {
+				if !errors.Is(err, tt.expected.err) {
 					t.Fatal("error received while processing combination stream:", err)
 				}
 

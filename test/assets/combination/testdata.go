@@ -1,12 +1,12 @@
-package combinationTestData
+package testdata
 
-var CombinationInput map[string][]string = map[string][]string{
+var CombinationInput = map[string][]string{
 	"TEST1": {"foo", "bar"},
 	"TEST2": {"zip", "zap"},
 	"TEST3": {"bip", "bap"},
 }
 
-var CombinationOutput []map[string]string = []map[string]string{
+var CombinationOutput = []map[string]string{
 	{
 		"TEST1": "foo",
 		"TEST2": "zip",
