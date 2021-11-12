@@ -44,7 +44,6 @@ func (m manageables) manageWith(mgr ctrl.Manager) error {
 
 type Controller struct {
 	client.Client
-
 	log     logr.Logger
 	managed manageables
 }

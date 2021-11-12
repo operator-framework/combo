@@ -13,7 +13,6 @@ import (
 
 type combinationController struct {
 	client.Client
-
 	log logr.Logger
 }
 
