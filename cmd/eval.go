@@ -14,8 +14,8 @@ import (
 
 func init() {
 	rootCmd.AddCommand(evalCmd)
-	evalCmd.Flags().StringToStringVarP(&replacements, "replacement", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
-	if err := evalCmd.MarkFlagRequired("replacement"); err != nil {
+	evalCmd.Flags().StringToStringP("replacements", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
+	if err := evalCmd.MarkFlagRequired("replacements"); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize eval: %v", err)
 		os.Exit(1)
 	}
@@ -23,9 +23,9 @@ func init() {
 
 // formatReplacements takes a map[string]string from the args and formats them
 // in a way that the combinations package wants
-func formatReplacements(replacementsInput map[string]string) map[string][]string {
+func formatReplacements(replacements map[string]string) map[string][]string {
 	formattedReplacements := make(map[string][]string)
-	for key, val := range replacementsInput {
+	for key, val := range replacements {
 		formattedReplacements[key] = strings.Split(val, ",")
 	}
 	return formattedReplacements
@@ -38,8 +38,7 @@ func validateFile(file []byte) error {
 }
 
 var (
-	replacements map[string]string
-	evalCmd      = &cobra.Command{
+	evalCmd = &cobra.Command{
 		Use:   "eval [file]",
 		Short: "Evaluate the combinations for a file at the given path",
 		Long: `
@@ -47,11 +46,13 @@ Evaluate the combinations for a file at the given path. The file provided must b
 
 Note: the combo binary requires the --replacement flag to be explicitly set.
 
-The replacements flag allows users to specify a series of key value pairs in the form of KEY=VALUE.
+The replacements flag allows users to specify a series of key value pairs in the form of KEY=VALUES.
 
 Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 	`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			replacements, _ := cmd.Flags().GetStringToString("replacements")
+
 			file, err := os.ReadFile(args[0])
 			if err != nil {
 				return err
