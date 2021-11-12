@@ -12,7 +12,6 @@ import (
 )
 
 // +kubebuilder:rbac:groups=core.rukpak.io,resources=provisionerclasses,verbs=get;list;watch;create;update;patch;delete
-
 type templateController struct {
 	client.Client
 	log logr.Logger
