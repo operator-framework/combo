@@ -56,8 +56,15 @@ test: test-unit ## Run the tests
 test-unit: ## Run the unit tests
 	$(Q)go test -count=1 -short ./...
 
-deploy: generate
-	kubectl apply -f manifests/crds && kubectl apply -f manifests/deploy
+deploy: generate ## Deploy the Combo operator to the current cluster
+	kubectl apply -f manifests/crds			  && \
+	kubectl apply -f manifests/namespace.yaml && \
+	kubectl apply -f manifests/deploy
+
+teardown: ## Teardown the Combo operator to the current cluster
+	kubectl delete -f manifests/deploy		   && \
+	kubectl delete -f manifests/namespace.yaml && \
+	kubectl delete -f manifests/crds
 
 # Binary builds
 GO_BUILD := $(Q)go build
