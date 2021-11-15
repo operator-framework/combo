@@ -1,3 +1,7 @@
+ORG := github.com/operator-framework
+PKG := $(ORG)/combo
+GIT_COMMIT := $(shell git rev-parse HEAD)
+
 # kernel-style V=1 build verbosity
 ifeq ("$(origin V)", "command line")
   BUILD_VERBOSE = $(V)
@@ -38,8 +42,9 @@ lint: ## Run golangci-lint
 verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
+VERSION_FLAGS=-ldflags "-X $(PKG)/pkg/version.GitCommit=$(GIT_COMMIT) -X $(PKG)/pkg/version.ComboVersion=`cat COMBO_VERSION`"
 build-cli: ## Build the CLI binary
-	$(Q)go build -a -o ./bin/combo
+	$(Q)go build -a $(VERSION_FLAGS) -o ./bin/combo
 
 IMAGE_REPO=quay.io/operator-framework/combo
 IMAGE_TAG=latest
