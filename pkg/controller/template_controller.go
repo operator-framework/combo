@@ -16,7 +16,8 @@ type templateController struct {
 	log logr.Logger
 }
 
-func (t *templateController) manageWith(mgr ctrl.Manager) error {
+func (t *templateController) manageWith(mgr ctrl.Manager, version int) error {
+	t.log = t.log.V(version)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Template{}).
 		Complete(t)
