@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,10 @@ import (
 	"github.com/operator-framework/combo/pkg/generator"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+)
+
+var (
+	ErrEmptyFile = errors.New("empty file")
 )
 
 func init() {
@@ -34,7 +39,11 @@ func formatReplacements(replacements map[string]string) map[string][]string {
 // validateFile is a simple wrapper to ensure the input/output of valid YAML
 func validateFile(file []byte) error {
 	var holder interface{}
-	return yaml.Unmarshal(file, &holder)
+	err := yaml.Unmarshal(file, &holder)
+	if holder == nil {
+		return ErrEmptyFile
+	}
+	return err
 }
 
 var (
@@ -50,12 +59,16 @@ The replacements flag allows users to specify a series of key value pairs in the
 
 Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 	`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			replacements, _ := cmd.Flags().GetStringToString("replacements")
+			replacements, err := cmd.Flags().GetStringToString("replacements")
+			if err != nil {
+				return fmt.Errorf("failed to access replacements flag: %w", err)
+			}
 
 			file, err := os.ReadFile(args[0])
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to read file specified: %w", err)
 			}
 
 			if err := validateFile(file); err != nil {
@@ -72,7 +85,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 
 			generatedFile, err := generator.Evaluate(ctx, string(file), combinations)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to generate combinations: %w", err)
 			}
 
 			if err := validateFile([]byte(generatedFile)); err != nil {
