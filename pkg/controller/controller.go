@@ -10,6 +10,8 @@ import (
 	"github.com/operator-framework/combo/api/v1alpha1"
 )
 
+const Version = 1
+
 var (
 	schemeBuilder = runtime.NewSchemeBuilder(
 		kscheme.AddToScheme,
@@ -21,7 +23,7 @@ var (
 )
 
 type manageable interface {
-	manageWith(mgr ctrl.Manager) error
+	manageWith(mgr ctrl.Manager, version int) error
 }
 
 type manageables []manageable
@@ -33,7 +35,7 @@ func (m manageables) manageWith(mgr ctrl.Manager) error {
 			panic("failed to register controller with manager: cannot be nil")
 		}
 
-		if err := man.manageWith(mgr); err != nil {
+		if err := man.manageWith(mgr, Version); err != nil {
 			// Bail out if any controller fails to register with the manager
 			return err
 		}

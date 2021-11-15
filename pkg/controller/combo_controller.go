@@ -16,7 +16,8 @@ type combinationController struct {
 	log logr.Logger
 }
 
-func (c *combinationController) manageWith(mgr ctrl.Manager) error {
+func (c *combinationController) manageWith(mgr ctrl.Manager, version int) error {
+	c.log = c.log.V(version)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Combination{}).
 		Complete(c)
