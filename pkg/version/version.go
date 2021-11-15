@@ -10,7 +10,7 @@ var GitCommit string
 
 // String returns a pretty string concatenation of ComboVersion and GitCommit
 func String() string {
-	return fmt.Sprintf("Combo version: %s\ngit commit: %s", ComboVersion, GitCommit)
+	return fmt.Sprintf("Combo version: %s\nGit commit: %s", ComboVersion, GitCommit)
 }
 
 // Full returns a hyphenated concatenation of just ComboVersion and GitCommit
