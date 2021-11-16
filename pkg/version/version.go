@@ -8,12 +8,16 @@ var ComboVersion string
 // GitCommit indicates which git commit the binary was built from
 var GitCommit string
 
+var KubernetesVersion string
+
 // String returns a pretty string concatenation of ComboVersion and GitCommit
 func String() string {
-	return fmt.Sprintf("Combo version: %s\nGit commit: %s", ComboVersion, GitCommit)
+	return fmt.Sprintf(
+		"Combo version: %s\nGit commit: %s\nKubernetes version: %s",
+		ComboVersion, GitCommit, KubernetesVersion)
 }
 
 // Full returns a hyphenated concatenation of just ComboVersion and GitCommit
 func Full() string {
-	return fmt.Sprintf("%s-%s", ComboVersion, GitCommit)
+	return fmt.Sprintf("%s-%s-%s", ComboVersion, GitCommit, KubernetesVersion)
 }
