@@ -20,6 +20,10 @@ func Execute(log logr.Logger) error {
 		rootLog = log
 	}
 
+	rootCmd.AddCommand(evalCmd)
+	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(versionCmd)
+
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	return rootCmd.Execute()
