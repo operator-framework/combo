@@ -43,7 +43,7 @@ lint: ## Run golangci-lint
 verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
-KUBERNETES_VERSION=v1alpha1
+KUBERNETES_VERSION=v0.22.2
 VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT) -X $(VERSION_PATH).ComboVersion=`cat COMBO_VERSION` -X $(VERSION_PATH).KubernetesVersion=$(KUBERNETES_VERSION)"
 build-cli: ## Build the CLI binary. Speciy VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version.
 	$(Q)go build -a $(VERSION_FLAGS) -o ./bin/combo

@@ -16,8 +16,3 @@ func String() string {
 		"Combo version: %s\nGit commit: %s\nKubernetes version: %s",
 		ComboVersion, GitCommit, KubernetesVersion)
 }
-
-// Full returns a hyphenated concatenation of just ComboVersion and GitCommit
-func Full() string {
-	return fmt.Sprintf("%s-%s-%s", ComboVersion, GitCommit, KubernetesVersion)
-}
