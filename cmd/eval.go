@@ -18,7 +18,6 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(evalCmd)
 	evalCmd.Flags().StringToStringP("replacements", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
 	if err := evalCmd.MarkFlagRequired("replacements"); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize eval: %v", err)
@@ -50,8 +49,7 @@ var (
 	evalCmd = &cobra.Command{
 		Use:   "eval [file]",
 		Short: "Evaluate the combinations for a file at the given path",
-		Long: `
-Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
+		Long: `Evaluate the combinations for a file at the given path. The file provided must be valid YAML.
 
 Note: the combo binary requires the --replacement flag to be explicitly set.
 

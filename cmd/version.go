@@ -8,7 +8,6 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
 	versionCmd.Flags().BoolP("full", "f", false, "Returns the fully constructed version")
 }
 

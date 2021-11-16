@@ -8,10 +8,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
-func init() {
-	rootCmd.AddCommand(runCmd)
-}
-
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run Combo as a controller on the cluster",
