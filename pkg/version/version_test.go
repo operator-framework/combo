@@ -19,15 +19,15 @@ func TestVersion(t *testing.T) {
 		{
 			name:              "outputs the correct string",
 			cliVersion:        "v0.0.1",
-			kubernetesVersion: "v1alpha1",
+			kubernetesVersion: "v0.22.2",
 			commit:            "b6d81d10b34d75c85eea9fd3904298d768f91f4a",
 			expectedString: fmt.Sprintf(
 				"Combo version: %s\nGit commit: %s\nKubernetes version: %s",
 				"v0.0.1",
 				"b6d81d10b34d75c85eea9fd3904298d768f91f4a",
-				"v1alpha1",
+				"v0.22.2",
 			),
-			expectedFull: "v0.0.1-b6d81d10b34d75c85eea9fd3904298d768f91f4a-v1alpha1",
+			expectedFull: "v0.0.1-b6d81d10b34d75c85eea9fd3904298d768f91f4a-v0.22.2",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -36,7 +36,6 @@ func TestVersion(t *testing.T) {
 			GitCommit = tt.commit
 
 			assert.Equal(t, tt.expectedString, String())
-			assert.Equal(t, tt.expectedFull, Full())
 		})
 	}
 }
