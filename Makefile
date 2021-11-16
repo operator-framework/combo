@@ -1,5 +1,6 @@
 ORG := github.com/operator-framework
 PKG := $(ORG)/combo
+VERSION_PATH := $(PKG)/pkg/version
 GIT_COMMIT := $(shell git rev-parse HEAD)
 
 # kernel-style V=1 build verbosity
@@ -42,8 +43,9 @@ lint: ## Run golangci-lint
 verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
-VERSION_FLAGS=-ldflags "-X $(PKG)/pkg/version.GitCommit=$(GIT_COMMIT) -X $(PKG)/pkg/version.ComboVersion=`cat COMBO_VERSION`"
-build-cli: ## Build the CLI binary
+KUBERNETES_VERSION=v1alpha1
+VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT) -X $(VERSION_PATH).ComboVersion=`cat COMBO_VERSION` -X $(VERSION_PATH).KubernetesVersion=$(KUBERNETES_VERSION)"
+build-cli: ## Build the CLI binary. Speciy VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version.
 	$(Q)go build -a $(VERSION_FLAGS) -o ./bin/combo
 
 IMAGE_REPO=quay.io/operator-framework/combo
