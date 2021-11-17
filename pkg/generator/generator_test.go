@@ -1,8 +1,7 @@
-package generator
+package generate
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/operator-framework/combo/pkg/combination"
@@ -13,7 +12,7 @@ import (
 
 type expected struct {
 	err        error
-	evaluation string
+	evaluation []string
 }
 
 func TestEvaluate(t *testing.T) {
@@ -43,7 +42,7 @@ func TestEvaluate(t *testing.T) {
 			template: ``,
 			expected: expected{
 				err:        nil,
-				evaluation: ``,
+				evaluation: []string{},
 			},
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{
@@ -58,17 +57,16 @@ func TestEvaluate(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			evaluation, err := Evaluate(ctx, tt.template, tt.combinations)
+			generator := NewGenerator(tt.template, tt.combinations)
+
+			evaluation, err := generator.Evaluate(ctx)
 			if err != nil {
 				t.Fatal("received an error during evaluation:", err)
 			}
 
 			assert.Equal(t, tt.expected.err, err)
-			require.ElementsMatch(
-				t,
-				strings.Split(tt.expected.evaluation, "---"),
-				strings.Split(evaluation, "---"),
-				"Document evaluations generated incorrectly")
+
+			require.ElementsMatch(t, tt.expected.evaluation, evaluation)
 		})
 	}
 }

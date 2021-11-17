@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/operator-framework/combo/pkg/combination"
-	"github.com/operator-framework/combo/pkg/generator"
+	generate "github.com/operator-framework/combo/pkg/generator"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -78,13 +78,17 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				combination.WithSolveAhead(),
 			)
 
+			generator := generate.NewGenerator(string(file), combinations)
+
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			generatedFile, err := generator.Evaluate(ctx, string(file), combinations)
+			generatedDocuments, err := generator.Evaluate(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to generate combinations: %w", err)
 			}
+
+			generatedFile := "---\n" + strings.Join(generatedDocuments, "\n---\n")
 
 			if err := validateFile([]byte(generatedFile)); err != nil {
 				return fmt.Errorf("failed to validate file generated: %w", err)
