@@ -2,6 +2,9 @@ package generate
 
 import (
 	"context"
+	"errors"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/operator-framework/combo/pkg/combination"
@@ -10,25 +13,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type expected struct {
-	err        error
-	evaluation []string
-}
-
 func TestEvaluate(t *testing.T) {
 	for _, tt := range []struct {
 		name         string
-		template     string
+		file         io.Reader
 		combinations combination.Stream
-		expected     expected
+		expected     []string
+		err          error
 	}{
 		{
 			name:     "can process a template",
-			template: testdata.EvaluateInput,
-			expected: expected{
-				err:        nil,
-				evaluation: testdata.EvaluateOutput,
-			},
+			file:     strings.NewReader(testdata.EvaluateInput),
+			expected: testdata.EvaluateOutput,
+			err:      nil,
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{
 					"NAMESPACE": {"foo", "bar"},
@@ -39,11 +36,23 @@ func TestEvaluate(t *testing.T) {
 		},
 		{
 			name:     "processes an empty template",
-			template: ``,
-			expected: expected{
-				err:        nil,
-				evaluation: []string{},
-			},
+			file:     strings.NewReader(``),
+			expected: []string{},
+			err:      nil,
+			combinations: combination.NewStream(
+				combination.WithArgs(map[string][]string{
+					"NAMESPACE": {"foo", "bar"},
+					"NAME":      {"baz"},
+				}),
+				combination.WithSolveAhead(),
+			),
+		},
+		{
+			name:     "processes an empty template",
+			file:     strings.NewReader(``),
+			expected: []string{},
+			err:      nil,
+
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{
 					"NAMESPACE": {"foo", "bar"},
@@ -57,16 +66,19 @@ func TestEvaluate(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			generator := NewGenerator(tt.template, tt.combinations)
-
-			evaluation, err := generator.Evaluate(ctx)
-			if err != nil {
-				t.Fatal("received an error during evaluation:", err)
+			generator, err := NewGenerator(tt.file, tt.combinations)
+			if !errors.Is(err, tt.err) {
+				t.Fatalf("received an error while building generator: %v", err)
 			}
 
-			assert.Equal(t, tt.expected.err, err)
+			actual, err := generator.Generate(ctx)
+			if !errors.Is(err, tt.err) {
+				t.Fatalf("received an error during evaluation: %v", err)
+			}
 
-			require.ElementsMatch(t, tt.expected.evaluation, evaluation)
+			assert.Equal(t, tt.err, err)
+
+			require.ElementsMatch(t, tt.expected, actual)
 		})
 	}
 }

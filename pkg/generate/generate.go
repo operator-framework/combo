@@ -2,11 +2,13 @@ package generate
 
 import (
 	"context"
+	"fmt"
+	"io"
 )
 
 type (
 	Generator interface {
-		Evaluate(ctx context.Context) ([]string, error)
+		Generate(ctx context.Context) ([]string, error)
 	}
 
 	CombinationStream interface {
@@ -19,18 +21,21 @@ type generatorImp struct {
 	template     template
 }
 
-func NewGenerator(file string, combinations CombinationStream) Generator {
-	return &generatorImp{
-		template:     newTemplate(file),
-		combinations: combinations,
+func NewGenerator(file io.Reader, combinations CombinationStream) (Generator, error) {
+	compiledTemplate, err := buildTemplate(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build template: %w", err)
 	}
+
+	return &generatorImp{
+		template:     compiledTemplate,
+		combinations: combinations,
+	}, nil
 }
 
 // Evaluate uses specified template and combination stream to build/return the combinations of
 // documents built together
-func (g *generatorImp) Evaluate(ctx context.Context) ([]string, error) {
-	var result template
-
+func (g *generatorImp) Generate(ctx context.Context) ([]string, error) {
 	// Wait for the context to end or the combinations to be done
 	for {
 		select {
@@ -43,10 +48,10 @@ func (g *generatorImp) Evaluate(ctx context.Context) ([]string, error) {
 			}
 
 			if combination == nil {
-				return result.documents, nil
+				return g.template.processedDocuments, nil
 			}
 
-			result = g.template.with(combination, result)
+			g.template.with(combination)
 		}
 	}
 }

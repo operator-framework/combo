@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -14,7 +16,8 @@ import (
 )
 
 var (
-	ErrEmptyFile = errors.New("empty file")
+	ErrEmptyFile        = errors.New("empty file")
+	ErrCouldNotReadFile = errors.New("could not read file")
 )
 
 func init() {
@@ -35,14 +38,20 @@ func formatReplacements(replacements map[string]string) map[string][]string {
 	return formattedReplacements
 }
 
-// validateFile is a simple wrapper to ensure the input/output of valid YAML
-func validateFile(file []byte) error {
-	var holder interface{}
-	err := yaml.Unmarshal(file, &holder)
-	if holder == nil {
+// validateFile is a simple wrapper to ensure the file we're using exists, is readable,
+// and is valid YAML
+func validateFile(file io.Reader) error {
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return ErrCouldNotReadFile
+	}
+
+	if len(fileBytes) == 0 {
 		return ErrEmptyFile
 	}
-	return err
+
+	var holder interface{}
+	return yaml.Unmarshal(fileBytes, &holder)
 }
 
 var (
@@ -64,7 +73,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				return fmt.Errorf("failed to access replacements flag: %w", err)
 			}
 
-			file, err := os.ReadFile(args[0])
+			file, err := os.Open(args[0])
 			if err != nil {
 				return fmt.Errorf("failed to read file specified: %w", err)
 			}
@@ -78,19 +87,22 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				combination.WithSolveAhead(),
 			)
 
-			generator := generate.NewGenerator(string(file), combinations)
+			generator, err := generate.NewGenerator(file, combinations)
+			if err != nil {
+				return fmt.Errorf("failed to construct generator: %w", err)
+			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			generatedDocuments, err := generator.Evaluate(ctx)
+			generatedDocuments, err := generator.Generate(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to generate combinations: %w", err)
 			}
 
 			generatedFile := "---\n" + strings.Join(generatedDocuments, "\n---\n")
 
-			if err := validateFile([]byte(generatedFile)); err != nil {
+			if err := validateFile(strings.NewReader(generatedFile)); err != nil {
 				return fmt.Errorf("failed to validate file generated: %w", err)
 			}
 
