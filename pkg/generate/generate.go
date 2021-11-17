@@ -21,7 +21,6 @@ type generatorImp struct {
 
 func NewGenerator(file string, combinations CombinationStream) Generator {
 	return &generatorImp{
-
 		template:     newTemplate(file),
 		combinations: combinations,
 	}

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/operator-framework/combo/pkg/combination"
-	generate "github.com/operator-framework/combo/pkg/generator"
+	"github.com/operator-framework/combo/pkg/generate"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
