@@ -3,6 +3,7 @@ package generate
 import (
 	"errors"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -10,6 +11,10 @@ import (
 )
 
 func TestBuildTemplate(t *testing.T) {
+	// Create an invalid stream to verify that buildTemplate() bubbles up the
+	// error correctly if a file is not readable
+	var invalidStream, _ = os.Open("./DOES_NOT_EXIST")
+
 	for _, tt := range []struct {
 		name     string
 		file     io.Reader
@@ -17,7 +22,7 @@ func TestBuildTemplate(t *testing.T) {
 		err      error
 	}{
 		{
-			name: "can find a value if present",
+			name: "builds a template correctly",
 
 			file: strings.NewReader(`---
 testOne: 123
@@ -32,6 +37,12 @@ testTwo: 456
 			file:     strings.NewReader(""),
 			expected: nil,
 			err:      nil,
+		},
+		{
+			name:     "returns ErrCouldNotReadFile if io.Reader is not readable",
+			file:     invalidStream,
+			expected: nil,
+			err:      ErrCouldNotReadFile,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -99,12 +110,58 @@ func TestWith(t *testing.T) {
 		expected []string
 	}{
 		{
-			name:  "can create a template correctly with a combo",
+			name:  "processes the template given a combo",
 			combo: map[string]string{"NAMESPACE": "foo", "NAME": "baz"},
 			template: template{
 				documents: []string{
 					"testOne: NAMESPACE",
 					"testTwo: NAME",
+				},
+			},
+			expected: []string{
+				"testOne: foo",
+				"testTwo: baz",
+			},
+		},
+
+		{
+			name:  "processes the template correctly given a combo not present in template",
+			combo: map[string]string{"NAMESPACE": "foo", "NOT_PRESENT": "baz"},
+			template: template{
+				documents: []string{
+					"testOne: NAMESPACE",
+					"testTwo: NAME",
+				},
+			},
+			expected: []string{
+				"testOne: foo",
+				"testTwo: NAME",
+			},
+		},
+		{
+			name:  "processes documents that have no replacements made",
+			combo: map[string]string{"NAMESPACE": "foo", "NAME": "baz"},
+			template: template{
+				documents: []string{
+					"testOne: NAMESPACE",
+					"testTwo: NAME",
+					"testThree: 789",
+				},
+			},
+			expected: []string{
+				"testOne: foo",
+				"testTwo: baz",
+				"testThree: 789",
+			},
+		},
+		{
+			name:  "does not process an empty document",
+			combo: map[string]string{"NAMESPACE": "foo", "NAME": "baz"},
+			template: template{
+				documents: []string{
+					"testOne: NAMESPACE",
+					"testTwo: NAME",
+					"",
 				},
 			},
 			expected: []string{

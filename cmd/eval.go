@@ -18,6 +18,7 @@ import (
 var (
 	ErrEmptyFile        = errors.New("empty file")
 	ErrCouldNotReadFile = errors.New("could not read file")
+	FilePathArgsIndex   = 0
 )
 
 func init() {
@@ -73,12 +74,12 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				return fmt.Errorf("failed to access replacements flag: %w", err)
 			}
 
-			file, err := os.Open(args[0])
+			templateFile, err := os.Open(args[FilePathArgsIndex])
 			if err != nil {
 				return fmt.Errorf("failed to read file specified: %w", err)
 			}
 
-			if err := validateFile(file); err != nil {
+			if err := validateFile(templateFile); err != nil {
 				return fmt.Errorf("failed to validate file specified: %w", err)
 			}
 
@@ -87,7 +88,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				combination.WithSolveAhead(),
 			)
 
-			generator, err := generate.NewGenerator(file, combinations)
+			generator, err := generate.NewGenerator(templateFile, combinations)
 			if err != nil {
 				return fmt.Errorf("failed to construct generator: %w", err)
 			}

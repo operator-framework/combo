@@ -8,12 +8,12 @@ import (
 	"testing"
 
 	"github.com/operator-framework/combo/pkg/combination"
-	testdata "github.com/operator-framework/combo/test/assets/generator"
+	testdata "github.com/operator-framework/combo/test/assets/generate"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestEvaluate(t *testing.T) {
+func TestGenerate(t *testing.T) {
 	for _, tt := range []struct {
 		name         string
 		file         io.Reader
@@ -23,8 +23,8 @@ func TestEvaluate(t *testing.T) {
 	}{
 		{
 			name:     "can process a template",
-			file:     strings.NewReader(testdata.EvaluateInput),
-			expected: testdata.EvaluateOutput,
+			file:     strings.NewReader(testdata.GenerateInput),
+			expected: testdata.GenerateOutput,
 			err:      nil,
 			combinations: combination.NewStream(
 				combination.WithArgs(map[string][]string{
