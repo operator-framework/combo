@@ -33,7 +33,7 @@ func NewGenerator(file io.Reader, combinations CombinationStream) (Generator, er
 	}, nil
 }
 
-// Evaluate uses specified template and combination stream to build/return the combinations of
+// Genreate uses specified template and combination stream to build/return the combinations of
 // documents built together
 func (g *generatorImp) Generate(ctx context.Context) ([]string, error) {
 	// Wait for the context to end or the combinations to be done

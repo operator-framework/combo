@@ -2,6 +2,7 @@ package generate
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
@@ -23,7 +24,7 @@ func buildTemplate(file io.Reader) (template, error) {
 	// Separate the documents by the yaml separator and build a template with them
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return template{}, ErrCouldNotReadFile
+		return template{}, fmt.Errorf("%w: %s", ErrCouldNotReadFile, err.Error())
 	}
 
 	docs := strings.Split(string(fileBytes), "---")
