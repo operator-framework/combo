@@ -1,4 +1,4 @@
-package generate
+package template
 
 import (
 	"errors"
@@ -13,14 +13,14 @@ var (
 	ErrCouldNotReadFile = errors.New("could not read file")
 )
 
-// Template contains an array of documents that can be
+// template contains an array of documents that can be
 // interacted with with its various functions.
 type template struct {
 	documents          []string
 	processedDocuments []string
 }
 
-func buildTemplate(file io.Reader) (template, error) {
+func newTemplate(file io.Reader) (template, error) {
 	// Separate the documents by the yaml separator and build a template with them
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {

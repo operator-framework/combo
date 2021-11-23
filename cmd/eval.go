@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/operator-framework/combo/pkg/combination"
-	"github.com/operator-framework/combo/pkg/generate"
+	"github.com/operator-framework/combo/pkg/template"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -88,26 +88,26 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				combination.WithSolveAhead(),
 			)
 
-			generator, err := generate.NewGenerator(templateFile, combinations)
+			templateBuilder, err := template.NewBuilder(templateFile, combinations)
 			if err != nil {
-				return fmt.Errorf("failed to construct generator: %w", err)
+				return fmt.Errorf("failed to construct builder: %w", err)
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			generatedDocuments, err := generator.Generate(ctx)
+			combinedTemplateDocuments, err := templateBuilder.Build(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to generate combinations: %w", err)
+				return fmt.Errorf("failed to build documents with combinations: %w", err)
 			}
 
-			generatedFile := "---\n" + strings.Join(generatedDocuments, "\n---\n")
+			combinedTemplate := "---\n" + strings.Join(combinedTemplateDocuments, "\n---\n")
 
-			if err := validateFile(strings.NewReader(generatedFile)); err != nil {
-				return fmt.Errorf("failed to validate file generated: %w", err)
+			if err := validateFile(strings.NewReader(combinedTemplate)); err != nil {
+				return fmt.Errorf("failed to validate combined template constructed: %w", err)
 			}
 
-			fmt.Println(generatedFile)
+			fmt.Println(combinedTemplate)
 
 			return nil
 		},
