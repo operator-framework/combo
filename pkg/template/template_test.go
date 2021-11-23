@@ -1,4 +1,4 @@
-package generate
+package template
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBuildTemplate(t *testing.T) {
+func TestNewTemplate(t *testing.T) {
 	// Create an invalid stream to verify that buildTemplate() bubbles up the
 	// error correctly if a file is not readable
 	var invalidStream, _ = os.Open("./DOES_NOT_EXIST")
@@ -46,7 +46,7 @@ testTwo: 456
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			actualTemplate, err := buildTemplate(tt.file)
+			actualTemplate, err := newTemplate(tt.file)
 			if !errors.Is(err, tt.err) {
 				t.Fatal("error with test, not able to create template:", err)
 			}

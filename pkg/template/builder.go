@@ -1,4 +1,4 @@
-package generate
+package template
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 )
 
 type (
-	Generator interface {
-		Generate(ctx context.Context) ([]string, error)
+	Builder interface {
+		Build(ctx context.Context) ([]string, error)
 	}
 
 	CombinationStream interface {
@@ -16,26 +16,26 @@ type (
 	}
 )
 
-type generatorImp struct {
+type builderImp struct {
 	combinations CombinationStream
 	template     template
 }
 
-func NewGenerator(file io.Reader, combinations CombinationStream) (Generator, error) {
-	compiledTemplate, err := buildTemplate(file)
+func NewBuilder(file io.Reader, combinations CombinationStream) (Builder, error) {
+	compiledTemplate, err := newTemplate(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build template: %w", err)
 	}
 
-	return &generatorImp{
+	return &builderImp{
 		template:     compiledTemplate,
 		combinations: combinations,
 	}, nil
 }
 
-// Genreate uses specified template and combination stream to build/return the combinations of
-// documents built together
-func (g *generatorImp) Generate(ctx context.Context) ([]string, error) {
+// Build uses the current builder's template and combination stream to
+// construct the combinations of documents built together
+func (g *builderImp) Build(ctx context.Context) ([]string, error) {
 	// Wait for the context to end or the combinations to be done
 	for {
 		select {
