@@ -16,7 +16,7 @@ type (
 	}
 )
 
-type builderImp struct {
+type builder struct {
 	combinations CombinationStream
 	template     template
 }
@@ -27,15 +27,15 @@ func NewBuilder(file io.Reader, combinations CombinationStream) (Builder, error)
 		return nil, fmt.Errorf("failed to build template: %w", err)
 	}
 
-	return &builderImp{
+	return &builder{
 		template:     compiledTemplate,
 		combinations: combinations,
 	}, nil
 }
 
 // Build uses the current builder's template and combination stream to
-// construct the combinations of documents built together
-func (g *builderImp) Build(ctx context.Context) ([]string, error) {
+// construct the combinations of manifests built together
+func (g *builder) Build(ctx context.Context) ([]string, error) {
 	// Wait for the context to end or the combinations to be done
 	for {
 		select {
