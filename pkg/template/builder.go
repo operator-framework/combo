@@ -48,7 +48,7 @@ func (g *builderImp) Build(ctx context.Context) ([]string, error) {
 			}
 
 			if combination == nil {
-				return g.template.processedDocuments, nil
+				return g.template.processedManifests, nil
 			}
 
 			g.template.with(combination)

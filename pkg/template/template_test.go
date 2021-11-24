@@ -51,7 +51,7 @@ testTwo: 456
 				t.Fatal("error with test, not able to create template:", err)
 			}
 
-			actual := actualTemplate.documents
+			actual := actualTemplate.manifests
 
 			require.Equal(t, tt.expected, actual)
 		})
@@ -71,7 +71,7 @@ func TestHas(t *testing.T) {
 			expected: true,
 			find:     "testOne: 123",
 			template: template{
-				processedDocuments: []string{
+				processedManifests: []string{
 					"testOne: 123",
 					"testTwo: 456",
 				},
@@ -82,7 +82,7 @@ func TestHas(t *testing.T) {
 			expected: false,
 			find:     "testThree: 789",
 			template: template{
-				processedDocuments: []string{
+				processedManifests: []string{
 					"testOne: 123",
 					"testTwo: 456",
 				},
@@ -113,7 +113,7 @@ func TestWith(t *testing.T) {
 			name:  "processes the template given a combo",
 			combo: map[string]string{"NAMESPACE": "foo", "NAME": "baz"},
 			template: template{
-				documents: []string{
+				manifests: []string{
 					"testOne: NAMESPACE",
 					"testTwo: NAME",
 				},
@@ -128,7 +128,7 @@ func TestWith(t *testing.T) {
 			name:  "processes the template correctly given a combo not present in template",
 			combo: map[string]string{"NAMESPACE": "foo", "NOT_PRESENT": "baz"},
 			template: template{
-				documents: []string{
+				manifests: []string{
 					"testOne: NAMESPACE",
 					"testTwo: NAME",
 				},
@@ -139,10 +139,10 @@ func TestWith(t *testing.T) {
 			},
 		},
 		{
-			name:  "processes documents that have no replacements made",
+			name:  "processes manifests that have no replacements made",
 			combo: map[string]string{"NAMESPACE": "foo", "NAME": "baz"},
 			template: template{
-				documents: []string{
+				manifests: []string{
 					"testOne: NAMESPACE",
 					"testTwo: NAME",
 					"testThree: 789",
@@ -155,10 +155,10 @@ func TestWith(t *testing.T) {
 			},
 		},
 		{
-			name:  "does not process an empty document",
+			name:  "does not process an empty manifest",
 			combo: map[string]string{"NAMESPACE": "foo", "NAME": "baz"},
 			template: template{
-				documents: []string{
+				manifests: []string{
 					"testOne: NAMESPACE",
 					"testTwo: NAME",
 					"",
@@ -173,7 +173,7 @@ func TestWith(t *testing.T) {
 			name:  "responds correctly given an empty combo",
 			combo: map[string]string{},
 			template: template{
-				documents: []string{
+				manifests: []string{
 					"testOne: NAMESPACE",
 					"testTwo: NAME",
 				},
@@ -193,7 +193,7 @@ func TestWith(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.template.with(tt.combo)
 
-			require.Equal(t, tt.expected, tt.template.processedDocuments)
+			require.Equal(t, tt.expected, tt.template.processedManifests)
 		})
 	}
 }
