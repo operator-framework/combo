@@ -44,7 +44,7 @@ func formatReplacements(replacements map[string]string) map[string][]string {
 func validateFile(file io.Reader) error {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return ErrCouldNotReadFile
+		return fmt.Errorf("%w: %s", ErrCouldNotReadFile, err.Error())
 	}
 
 	if len(fileBytes) == 0 {
