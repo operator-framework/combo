@@ -22,18 +22,18 @@ type Stream interface {
 	Next(ctx context.Context) (map[string]string, error)
 	All() ([]map[string]string, error)
 }
-type streamImp struct {
+type stream struct {
 	combinations []map[string]string
 	args         map[string][]string
 	solveAhead   bool
 	solved       bool
 }
 
-type StreamOption func(*streamImp)
+type StreamOption func(*stream)
 
 // NewStream creates a new stream and accepts stream options for it
 func NewStream(options ...StreamOption) Stream {
-	cs := &streamImp{}
+	cs := &stream{}
 	for _, option := range options {
 		option(cs)
 	}
@@ -42,7 +42,7 @@ func NewStream(options ...StreamOption) Stream {
 
 // WithArgs specifies which args to utilize in the new stream
 func WithArgs(args map[string][]string) StreamOption {
-	return func(cs *streamImp) {
+	return func(cs *stream) {
 		cs.args = args
 	}
 }
@@ -52,7 +52,7 @@ func WithArgs(args map[string][]string) StreamOption {
 // will solve all possible combinations of its args which could take a lot
 // of computation given a large enough input.
 func WithSolveAhead() StreamOption {
-	return func(cs *streamImp) {
+	return func(cs *stream) {
 		cs.solveAhead = true
 	}
 }
@@ -62,7 +62,7 @@ func WithSolveAhead() StreamOption {
 //       need to do so in the future to ensure an optimal use of memory. This
 //       is currently more of a stub to allow consumer packages to maintain its
 // 		 interface.
-func (cs *streamImp) Next(ctx context.Context) (map[string]string, error) {
+func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
 	if cs.solveAhead && !cs.solved {
 		if err := cs.solve(); err != nil {
 			return nil, err
@@ -83,7 +83,7 @@ func (cs *streamImp) Next(ctx context.Context) (map[string]string, error) {
 }
 
 // All retrieves all of the combinations from the stream
-func (cs *streamImp) All() ([]map[string]string, error) {
+func (cs *stream) All() ([]map[string]string, error) {
 	if cs.solveAhead && !cs.solved {
 		if err := cs.solve(); err != nil {
 			return nil, err
@@ -101,7 +101,7 @@ func (cs *streamImp) All() ([]map[string]string, error) {
 }
 
 // solve takes the current stream and its args to solve their combinations
-func (cs *streamImp) solve() error {
+func (cs *stream) solve() error {
 	// Return early if no args were sent
 	if len(cs.args) == 0 {
 		return ErrNoArgsSet
