@@ -13,15 +13,15 @@ var (
 	ErrCouldNotReadFile = errors.New("could not read file")
 )
 
-// template contains an array of documents that can be
+// template contains an array of manifests that can be
 // interacted with with its various functions.
 type template struct {
-	documents          []string
-	processedDocuments []string
+	manifests          []string
+	processedManifests []string
 }
 
 func newTemplate(file io.Reader) (template, error) {
-	// Separate the documents by the yaml separator and build a template with them
+	// Separate the manifests by the yaml separator and build a template with them
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		return template{}, fmt.Errorf("%w: %s", ErrCouldNotReadFile, err.Error())
@@ -33,36 +33,36 @@ func newTemplate(file io.Reader) (template, error) {
 	for _, doc := range docs {
 		trimmedDoc := strings.TrimSpace(doc)
 		if trimmedDoc != "" {
-			constructedTemplate.documents = append(constructedTemplate.documents, trimmedDoc)
+			constructedTemplate.manifests = append(constructedTemplate.manifests, trimmedDoc)
 		}
 	}
 
 	return constructedTemplate, nil
 }
 
-// has determines if any of the documents for the template
+// has determines if any of the manifests for the template
 // contains the specified string.
-func (t *template) has(searchDocument string) bool {
-	for _, document := range t.processedDocuments {
-		if document == searchDocument {
+func (t *template) has(searchManifest string) bool {
+	for _, manifest := range t.processedManifests {
+		if manifest == searchManifest {
 			return true
 		}
 	}
 	return false
 }
 
-// with builds the template documents with the combination set specified
+// with builds the template manifests with the combination set specified
 func (t *template) with(combo map[string]string) {
-	// For each document in the template evaluate the current combination set
-	for _, doc := range t.documents {
+	// For each manifest in the template evaluate the current combination set
+	for _, doc := range t.manifests {
 		for key, val := range combo {
 			doc = regexp.MustCompile(key+`\b`).ReplaceAllString(doc, val)
 		}
 
-		// Add the document if it isn't empty and doesn't already exist in the template
+		// Add the manifest if it isn't empty and doesn't already exist in the template
 		shouldAdd := doc != "" && !t.has(doc)
 		if shouldAdd {
-			t.processedDocuments = append(t.processedDocuments, doc)
+			t.processedManifests = append(t.processedManifests, doc)
 		}
 	}
 }

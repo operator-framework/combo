@@ -96,12 +96,12 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			combinedTemplateDocuments, err := templateBuilder.Build(ctx)
+			combinedTemplateManifests, err := templateBuilder.Build(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to build documents with combinations: %w", err)
+				return fmt.Errorf("failed to build manifests with combinations: %w", err)
 			}
 
-			combinedTemplate := "---\n" + strings.Join(combinedTemplateDocuments, "\n---\n")
+			combinedTemplate := "---\n" + strings.Join(combinedTemplateManifests, "\n---\n")
 
 			if err := validateFile(strings.NewReader(combinedTemplate)); err != nil {
 				return fmt.Errorf("failed to validate combined template constructed: %w", err)
