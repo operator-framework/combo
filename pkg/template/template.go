@@ -27,13 +27,13 @@ func newTemplate(file io.Reader) (template, error) {
 		return template{}, fmt.Errorf("%w: %s", ErrCouldNotReadFile, err.Error())
 	}
 
-	docs := strings.Split(string(fileBytes), "---")
+	manifests := strings.Split(string(fileBytes), "---")
 
 	var constructedTemplate template
-	for _, doc := range docs {
-		trimmedDoc := strings.TrimSpace(doc)
-		if trimmedDoc != "" {
-			constructedTemplate.manifests = append(constructedTemplate.manifests, trimmedDoc)
+	for _, manifest := range manifests {
+		trimmedManifest := strings.TrimSpace(manifest)
+		if trimmedManifest != "" {
+			constructedTemplate.manifests = append(constructedTemplate.manifests, trimmedManifest)
 		}
 	}
 
@@ -54,15 +54,15 @@ func (t *template) has(searchManifest string) bool {
 // with builds the template manifests with the combination set specified
 func (t *template) with(combo map[string]string) {
 	// For each manifest in the template evaluate the current combination set
-	for _, doc := range t.manifests {
+	for _, manifest := range t.manifests {
 		for key, val := range combo {
-			doc = regexp.MustCompile(key+`\b`).ReplaceAllString(doc, val)
+			manifest = regexp.MustCompile(key+`\b`).ReplaceAllString(manifest, val)
 		}
 
 		// Add the manifest if it isn't empty and doesn't already exist in the template
-		shouldAdd := doc != "" && !t.has(doc)
+		shouldAdd := manifest != "" && !t.has(manifest)
 		if shouldAdd {
-			t.processedManifests = append(t.processedManifests, doc)
+			t.processedManifests = append(t.processedManifests, manifest)
 		}
 	}
 }
