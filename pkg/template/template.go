@@ -1,16 +1,13 @@
 package template
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"regexp"
 	"strings"
-)
 
-var (
-	ErrCouldNotReadFile = errors.New("could not read file")
+	comboErrors "github.com/operator-framework/combo/pkg/errors"
 )
 
 // template contains an array of manifests that can be
@@ -24,7 +21,7 @@ func newTemplate(file io.Reader) (template, error) {
 	// Separate the manifests by the yaml separator and build a template with them
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return template{}, fmt.Errorf("%w: %s", ErrCouldNotReadFile, err.Error())
+		return template{}, fmt.Errorf("%w: %s", comboErrors.ErrCouldNotReadFile, err.Error())
 	}
 
 	manifests := strings.Split(string(fileBytes), "---")

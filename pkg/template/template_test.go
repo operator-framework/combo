@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	comboErrors "github.com/operator-framework/combo/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +43,7 @@ testTwo: 456
 			name:     "returns ErrCouldNotReadFile if io.Reader is not readable",
 			file:     invalidStream,
 			expected: nil,
-			err:      ErrCouldNotReadFile,
+			err:      comboErrors.ErrCouldNotReadFile,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

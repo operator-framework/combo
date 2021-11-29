@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	comboErrors "github.com/operator-framework/combo/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,7 +58,7 @@ func TestValidateFile(t *testing.T) {
 		{
 			name:  "invalidates an unreadable file",
 			input: invalidStream,
-			err:   ErrCouldNotReadFile,
+			err:   comboErrors.ErrCouldNotReadFile,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
