@@ -10,15 +10,15 @@ import (
 	"strings"
 
 	"github.com/operator-framework/combo/pkg/combination"
+	comboErrors "github.com/operator-framework/combo/pkg/errors"
 	"github.com/operator-framework/combo/pkg/template"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
 
 var (
-	ErrEmptyFile        = errors.New("empty file")
-	ErrCouldNotReadFile = errors.New("could not read file")
-	FilePathArgsIndex   = 0
+	ErrEmptyFile      = errors.New("empty file")
+	FilePathArgsIndex = 0
 )
 
 func init() {
@@ -44,7 +44,7 @@ func formatReplacements(replacements map[string]string) map[string][]string {
 func validateFile(file io.Reader) error {
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return fmt.Errorf("%w: %s", ErrCouldNotReadFile, err.Error())
+		return fmt.Errorf("%w: %s", comboErrors.ErrCouldNotReadFile, err.Error())
 	}
 
 	if len(fileBytes) == 0 {
