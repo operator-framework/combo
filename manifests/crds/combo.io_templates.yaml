@@ -47,6 +47,14 @@ spec:
                   minItems: 1
                   items:
                     type: string
+            status:
+              type: object
+              properties:
+                evaluated:
+                  description: Conditions represents the current condition of the Combination.
+                  type: array
+                  items:
+                    type: string
       served: true
       storage: true
 status:

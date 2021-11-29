@@ -155,8 +155,8 @@ spec:
       name: feature-user
       apiGroup: rbac.authorization.k8s.io
   parameters:
-  - key: TARGET_GROUP
-  - key: TARGET_NAMESPACE
+  - TARGET_GROUP
+  - TARGET_NAMESPACE
 EOF
 ```
 
@@ -169,8 +169,7 @@ kind: Combination
 metadata:
   name: enable-feature
 spec:
-  template:
-    name: feature
+  template: feature
   arguments:
   - key: TARGET_GROUP
     values:
