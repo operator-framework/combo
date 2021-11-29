@@ -37,7 +37,12 @@ type Template struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec TemplateSpec `json:"spec"`
+	Spec   TemplateSpec   `json:"spec"`
+	Status TemplateStatus `json:"status,omitempty"`
+}
+type TemplateStatus struct {
+	// Conditions represents the current condition of the Combination.
+	Evaluated []string `json:"evaluated,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -74,6 +79,8 @@ type Argument struct {
 type CombinationStatus struct {
 	// Conditions represents the current condition of the Combination.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
+	// Represents the evaluation to this combination once processed
+	Evaluation []string `json:"evaluated,omitempty"`
 }
 
 // +genclient
@@ -82,6 +89,7 @@ type CombinationStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:resource:categories=combo,scope=Cluster
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Combination is the Schema for a combination
 type Combination struct {

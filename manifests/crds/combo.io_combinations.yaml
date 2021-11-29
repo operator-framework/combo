@@ -16,7 +16,11 @@ spec:
     singular: combination
   scope: Cluster
   versions:
-    - name: v1alpha1
+    - additionalPrinterColumns:
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+      name: v1alpha1
       schema:
         openAPIV3Schema:
           description: Combination is the Schema for a combination
@@ -110,6 +114,11 @@ spec:
                         type: string
                         maxLength: 316
                         pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                evaluated:
+                  description: Represents the evaluation to this combination once processed
+                  type: array
+                  items:
+                    type: string
       served: true
       storage: true
       subresources:
