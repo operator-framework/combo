@@ -3,6 +3,11 @@ PKG := $(ORG)/combo
 VERSION_PATH := $(PKG)/pkg/version
 GIT_COMMIT := $(shell git rev-parse HEAD)
 DEFAULT_VERSION := v0.0.1
+CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
+
+IMAGE_REPO=quay.io/operator-framework/combo
+IMAGE_TAG=latest
+IMAGE=$(IMAGE_REPO):$(IMAGE_TAG)
 
 # kernel-style V=1 build verbosity
 ifeq ("$(origin V)", "command line")
@@ -50,12 +55,8 @@ VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT) -X $(VERSION_
 build-cli: ## Build the CLI binary. Speciy VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version.
 	$(Q)go build -a $(VERSION_FLAGS) -o ./bin/combo
 
-IMAGE_REPO=quay.io/operator-framework/combo
-IMAGE_TAG=latest
 build-container: ## Build the Combo container. Accepts IMAGE_REPO and IMAGE_TAG overrides.
-	docker build . -f Dockerfile -t $(IMAGE_REPO):$(IMAGE_TAG)
-
-CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
+	docker build . -f Dockerfile -t $(IMAGE)
 
 # Static tests.
 .PHONY: test test-unit verify build
@@ -70,6 +71,13 @@ deploy: generate ## Deploy the Combo operator to the current cluster
 
 teardown: ## Teardown the Combo operator to the current cluster
 	kubectl delete --recursive -f manifests
+
+RUN_LOCAL_TYPE=KIND
+KIND_LOAD_COMMAND=kind load docker-image $(IMAGE)
+MINIKUBE_LOAD_COMMAND=minikube image load $(IMAGE)
+run-local:
+	$($(RUN_LOCAL_TYPE)_LOAD_COMMAND)
+	$(MAKE) deploy
 
 # Binary builds
 GO_BUILD := $(Q)go build
