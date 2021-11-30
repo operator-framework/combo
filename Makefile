@@ -75,7 +75,7 @@ teardown: ## Teardown the Combo operator to the current cluster
 RUN_LOCAL_TYPE=KIND
 KIND_LOAD_COMMAND=kind load docker-image $(IMAGE)
 MINIKUBE_LOAD_COMMAND=minikube image load $(IMAGE)
-run-local:
+run-local: build-container
 	$($(RUN_LOCAL_TYPE)_LOAD_COMMAND)
 	$(MAKE) deploy
 
