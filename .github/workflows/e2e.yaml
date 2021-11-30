@@ -1,4 +1,4 @@
-name: e2e-local
+name: e2e
 on:
   pull_request:
     paths-ignore:
