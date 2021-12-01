@@ -5,6 +5,7 @@ on:
     - '**/*.md'
   schedule:
   - cron: '0 0 * * *' # daily to pick up releases
+  workflow_dispatch:
 jobs:
   kind:
     runs-on: ubuntu-latest
