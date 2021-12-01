@@ -72,11 +72,8 @@ deploy: generate ## Deploy the Combo operator to the current cluster
 teardown: ## Teardown the Combo operator to the current cluster
 	kubectl delete --recursive -f manifests
 
-RUN_LOCAL_TYPE=KIND
-KIND_LOAD_COMMAND=kind load docker-image $(IMAGE)
-MINIKUBE_LOAD_COMMAND=minikube image load $(IMAGE)
 run-local: build-container
-	$($(RUN_LOCAL_TYPE)_LOAD_COMMAND)
+	kind load docker-image $(IMAGE)
 	$(MAKE) deploy
 
 # Binary builds
