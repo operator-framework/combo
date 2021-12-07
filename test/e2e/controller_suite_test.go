@@ -2,8 +2,6 @@ package e2e
 
 import (
 	"context"
-	"flag"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -11,18 +9,16 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/combo/api/v1alpha1"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
-	"k8s.io/kubectl/pkg/scheme"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	kscheme "k8s.io/client-go/kubernetes/scheme"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
-	kubeRestClient *rest.RESTClient
-	kubeClientSet  *kubernetes.Clientset
+	kubeclient client.Client
 )
 
 func TestE2E(t *testing.T) {
@@ -38,52 +34,49 @@ var _ = BeforeSuite(func() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Load the kube config to construct a client
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
+	scheme := runtime.NewSchemeBuilder(
+		kscheme.AddToScheme,
+		v1alpha1.AddToScheme,
+	)
 
-	// Build a client that can query the combo API's
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config := ctrl.GetConfigOrDie()
+
+	var err error
+	kubeclient, err = client.New(config, client.Options{})
 	if err != nil {
-		Fail("Error while building kubeconfig for suite:" + err.Error())
+		Fail("Error while building client: " + err.Error())
 	}
 
-	// Build a client set before editing the config for the rest client
-	if kubeClientSet, err = kubernetes.NewForConfig(config); err != nil {
-		Fail("Error while building kube clientset for suite: " + err.Error())
+	err = scheme.AddToScheme(kubeclient.Scheme())
+	if err != nil {
+		Fail("Error while add schemes to client: " + err.Error())
 	}
 
-	// Add customization to config for interacting with combo APIs
-	v1alpha1.AddToScheme(scheme.Scheme)
+	Context("should already have the combination CRD defined", func() {
+		Eventually(func() (bool, error) {
+			combinationCRD, err := kubeclient.RESTMapper().ResourceFor(v1alpha1.GroupVersion.WithResource("combination"))
+			return combinationCRD.Empty(), err
+		}).ShouldNot(BeTrue())
+	})
 
-	config.APIPath = "/apis"
-	config.ContentConfig.GroupVersion = &v1alpha1.GroupVersion
-	config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
-	config.UserAgent = rest.DefaultKubernetesUserAgent()
+	Context("should already have the template CRD defined", func() {
+		Eventually(func() (bool, error) {
+			templateCRD, err := kubeclient.RESTMapper().ResourceFor(v1alpha1.GroupVersion.WithResource("template"))
+			return templateCRD.Empty(), err
+		}).ShouldNot(BeTrue())
+	})
 
-	// Create the kube client
-	if kubeRestClient, err = rest.UnversionedRESTClientFor(config); err != nil {
-		Fail("Error while building kube rest client for suite:" + err.Error())
-	}
+	Context("should already have combo operator running and healthy", func() {
+		Eventually(func() (int, error) {
+			deployment := appsv1.Deployment{}
+			deploymentNamespace := types.NamespacedName{
+				Name:      "combo-operator",
+				Namespace: "combo",
+			}
 
-	// Confirm that the combination and template resources exist on cluster before starting suite
-	var combinationList v1alpha1.CombinationList
-	Expect(kubeRestClient.Get().Resource("combinations").Do(ctx).Into(&combinationList)).To(Succeed())
-	Expect(combinationList.APIVersion).To(Not(BeZero()))
+			err = kubeclient.Get(ctx, deploymentNamespace, &deployment)
 
-	var templateList v1alpha1.TemplateList
-	Expect(kubeRestClient.Get().Resource("templates").Do(ctx).Into(&templateList)).To(Succeed())
-	Expect(templateList.APIVersion).To(Not(BeZero()))
-
-	// Confirm that the combo operator is running and healthy
-	Eventually(func() (bool, error) {
-		deployment, err := kubeClientSet.AppsV1().Deployments("combo").Get(ctx, "combo-operator", v1.GetOptions{})
-		return deployment.Status.AvailableReplicas > 0, err
-	}).Should(BeTrue())
-
+			return int(deployment.Status.AvailableReplicas), err
+		}).Should(BeNumerically(">", 0))
+	})
 })
