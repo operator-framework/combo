@@ -37,12 +37,7 @@ type Template struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   TemplateSpec   `json:"spec"`
-	Status TemplateStatus `json:"status,omitempty"`
-}
-type TemplateStatus struct {
-	// Conditions represents the current condition of the Combination.
-	Evaluated []string `json:"evaluated,omitempty"`
+	Spec TemplateSpec `json:"spec"`
 }
 
 // +kubebuilder:object:root=true
