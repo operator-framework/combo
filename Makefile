@@ -4,6 +4,7 @@ VERSION_PATH := $(PKG)/pkg/version
 GIT_COMMIT := $(shell git rev-parse HEAD)
 DEFAULT_VERSION := v0.0.1
 CONTROLLER_GEN=$(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
+GO_BUILD := $(Q)go build
 
 IMAGE_REPO=quay.io/operator-framework/combo
 IMAGE_TAG=latest
@@ -61,10 +62,14 @@ build-container: ## Build the Combo container. Accepts IMAGE_REPO and IMAGE_TAG 
 # Static tests.
 .PHONY: test test-unit verify build
 
-test: test-unit ## Run the tests
+test: test-unit test-e2e ## Run both the unit and e2e tests
 
+UNIT_TEST_DIRS=$(shell go list ./... | grep -v /test/)
 test-unit: ## Run the unit tests
-	$(Q)go test -count=1 -short ./...
+	$(Q)go test -short $(UNIT_TEST_DIRS)
+
+test-e2e: run-local ## Run the e2e tests
+	go test ./test/e2e
 
 deploy: generate ## Deploy the Combo operator to the current cluster
 	kubectl apply --recursive -f manifests
@@ -72,9 +77,7 @@ deploy: generate ## Deploy the Combo operator to the current cluster
 teardown: ## Teardown the Combo operator to the current cluster
 	kubectl delete --recursive -f manifests
 
-run-local: build-container
+run-local: build-container ## Run Combo on local Kind cluster
 	kind load docker-image $(IMAGE)
 	$(MAKE) deploy
 
-# Binary builds
-GO_BUILD := $(Q)go build
