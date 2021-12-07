@@ -80,8 +80,15 @@ var _ = Describe("Combination controller", func() {
 		})
 
 		AfterEach(func() {
-			kubeclient.Delete(ctx, validTemplateCRCopy)
-			kubeclient.Delete(ctx, validCombinationCRCopy)
+			err := kubeclient.Delete(ctx, validCombinationCRCopy)
+			if err != nil {
+				Fail("Failed to clean-up combination after test: " + err.Error())
+			}
+
+			err = kubeclient.Delete(ctx, validTemplateCRCopy)
+			if err != nil {
+				Fail("Failed to clean-up template after test: " + err.Error())
+			}
 			ctx.Done()
 		})
 
@@ -107,7 +114,7 @@ var _ = Describe("Combination controller", func() {
 
 	})
 
-	When("given healthy input and an non-existant template", func() {
+	When("given healthy input and an non-existent template", func() {
 		var ctx context.Context
 		var validCombinationCRCopy *v1alpha1.Combination
 
@@ -126,7 +133,10 @@ var _ = Describe("Combination controller", func() {
 		})
 
 		AfterEach(func() {
-			kubeclient.Delete(ctx, validCombinationCRCopy)
+			err := kubeclient.Delete(ctx, validCombinationCRCopy)
+			if err != nil {
+				Fail("Failed to clean-up combination after test: " + err.Error())
+			}
 			ctx.Done()
 		})
 

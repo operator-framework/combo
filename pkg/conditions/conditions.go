@@ -41,7 +41,7 @@ var (
 )
 
 func NewConditions(transitionTime time.Time, err error, conditions ...metav1.Condition) []metav1.Condition {
-	var newConditions []metav1.Condition
+	newConditions := []metav1.Condition{}
 	for _, condition := range conditions {
 		if err != nil {
 			condition.Message += fmt.Sprintf("Error: %s", err.Error())
