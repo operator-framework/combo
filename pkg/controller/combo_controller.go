@@ -24,10 +24,12 @@ type combinationController struct {
 	log logr.Logger
 }
 
+// TODO: Watches for template. Store hash of last template?
 func (c *combinationController) manageWith(mgr ctrl.Manager, version int) error {
 	c.log = c.log.V(version)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Combination{}).
+		// Watches().
 		Complete(c)
 }
 
@@ -63,6 +65,7 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 		return reconcile.Result{}, fmt.Errorf("failed to retrieve %v template: %w", combination.Spec.Template, err)
 	}
 
+	// TODO: Async?
 	comboStream := combinationPkg.NewStream(
 		combinationPkg.WithArgs(formatArguments(combination.Spec.Arguments)),
 		combinationPkg.WithSolveAhead(),
