@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,6 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	combinationPkg "github.com/operator-framework/combo/pkg/combination"
+	comboConditions "github.com/operator-framework/combo/pkg/conditions"
 	templatePkg "github.com/operator-framework/combo/pkg/template"
 
 	"github.com/operator-framework/combo/api/v1alpha1"
@@ -29,27 +31,36 @@ func (c *combinationController) manageWith(mgr ctrl.Manager, version int) error 
 		Complete(c)
 }
 
-func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
+func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request) (result reconcile.Result, deferredErr error) {
 	// Set up a convenient log object so we don't have to type request over and over again
 	log := c.log.WithValues("request", req)
 
 	log.Info("new combination inbound")
 
 	combination := &v1alpha1.Combination{}
-	if err := c.Get(ctx, req.NamespacedName, combination); err != nil {
+	err := c.Get(ctx, req.NamespacedName, combination)
+	if err != nil {
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// Update the status whenever the reconciliation completes
+	defer func() {
+		if updateErr := c.Status().Update(ctx, combination); updateErr != nil {
+			deferredErr = fmt.Errorf("error updating status of combination: %w", updateErr)
+		}
+	}()
+
 	log.Info(fmt.Sprintf("combination %s successfully loaded in reconciler", combination.Name))
 
-	nameSpacedTemplate := types.NamespacedName{
-		Name:      combination.Spec.Template,
-		Namespace: combination.Namespace,
-	}
+	templateQuery := types.NamespacedName{Name: combination.Spec.Template}
 
 	template := &v1alpha1.Template{}
-	if err := c.Get(ctx, nameSpacedTemplate, template); err != nil {
-		return reconcile.Result{}, err
+	if err := c.Get(ctx, templateQuery, template); err != nil {
+		combination.Status.Conditions = comboConditions.NewConditions(
+			time.Now(),
+			err,
+			comboConditions.TemplateNotFoundCondition)
+		return reconcile.Result{}, fmt.Errorf("failed to retrieve %v template: %w", combination.Spec.Template, err)
 	}
 
 	comboStream := combinationPkg.NewStream(
@@ -59,6 +70,10 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 
 	builder, err := templatePkg.NewBuilder(strings.NewReader(template.Spec.Body), comboStream)
 	if err != nil {
+		combination.Status.Conditions = comboConditions.NewConditions(
+			time.Now(),
+			err,
+			comboConditions.TemplateBodyInvalid)
 		return reconcile.Result{}, fmt.Errorf("failed to construct a builder out of %s template body: %w", template.Name, err)
 	}
 
@@ -66,6 +81,10 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 
 	generatedManifests, err := builder.Build(ctx)
 	if err != nil {
+		combination.Status.Conditions = comboConditions.NewConditions(
+			time.Now(),
+			err,
+			comboConditions.ManifestGenerationFailed)
 		return reconcile.Result{}, fmt.Errorf("failed to generate manifest %s combinations: %w", combination.Name, err)
 	}
 
@@ -73,10 +92,10 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 
 	combination.Status = v1alpha1.CombinationStatus{
 		Evaluation: generatedManifests,
-	}
-
-	if err = c.Status().Update(ctx, combination); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to update %s combination's status: %w", combination.Name, err)
+		Conditions: comboConditions.NewConditions(
+			time.Now(),
+			nil,
+			comboConditions.ProccessedCombinationsCondition),
 	}
 
 	log.Info(fmt.Sprintf("reconciliation of %s combination complete!", combination.Name))

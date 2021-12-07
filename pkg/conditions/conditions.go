@@ -1,6 +1,7 @@
 package conditions
 
 import (
+	"fmt"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +20,18 @@ var (
 		Message: "Combination cannot be processed as template was not retrievable.",
 		Reason:  "TemplateNotFound",
 	}
+	TemplateBodyInvalid = metav1.Condition{
+		Type:    "Invalid",
+		Status:  "False",
+		Message: "Combination cannot be processed as template body was not valid.",
+		Reason:  "TemplateBodyInvalid",
+	}
+	ManifestGenerationFailed = metav1.Condition{
+		Type:    "Finished",
+		Status:  "False",
+		Message: "Generation of the manifest combinations failed.",
+		Reason:  "EvaluationInvalid",
+	}
 	ProccessedCombinationsCondition = metav1.Condition{
 		Type:    "Finished",
 		Status:  "True",
@@ -27,10 +40,15 @@ var (
 	}
 )
 
-func NewConditions(transitionTime time.Time, conditions ...metav1.Condition) []metav1.Condition {
+func NewConditions(transitionTime time.Time, err error, conditions ...metav1.Condition) []metav1.Condition {
 	var newConditions []metav1.Condition
 	for _, condition := range conditions {
+		if err != nil {
+			condition.Message += fmt.Sprintf("Error: %s", err.Error())
+		}
+
 		condition.LastTransitionTime = metav1.NewTime(transitionTime)
+
 		newConditions = append(newConditions, condition)
 	}
 	return newConditions
