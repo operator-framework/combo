@@ -11,8 +11,6 @@ GO_BUILD := $(Q)go build
 PKGS = $(shell go list ./...)
 
 # Binary build options
-GO_OS=darwin
-GO_ARCH=amd64
 KUBERNETES_VERSION=v0.22.2
 
 # Container build options
@@ -65,7 +63,7 @@ verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
 COMBO_VERSION=$(shell git describe || echo $(DEFAULT_VERSION))
-BUILD_FLAGS=CGO_ENABLED=0 GOARCH=$(GO_ARCH) GOOS=$(GO_OS)
+BUILD_FLAGS=CGO_ENABLED=0
 VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT) -X $(VERSION_PATH).ComboVersion=$(COMBO_VERSION) -X $(VERSION_PATH).KubernetesVersion=$(KUBERNETES_VERSION)"
 build-cli: ## Build the CLI binary. Speciy VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version.
 	$(Q) $(BUILD_FLAGS) go build $(VERSION_FLAGS) -o ./bin/combo
@@ -105,7 +103,7 @@ run: build-container ## Run Combo on local Kind cluster
 	$(MAKE) deploy
 
 run-local:
-	$(MAKE) GO_OS=linux build-local-container
+	$(MAKE) GOOS=linux build-local-container
 	kind load docker-image $(IMAGE)
 	$(MAKE) deploy
 
