@@ -30,7 +30,7 @@ var (
 		Type:    "Finished",
 		Status:  "False",
 		Message: "Generation of the manifest combinations failed.",
-		Reason:  "EvaluationInvalid",
+		Reason:  "EvaluationsInvalid",
 	}
 	ProccessedCombinationsCondition = metav1.Condition{
 		Type:    "Finished",

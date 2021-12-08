@@ -67,38 +67,29 @@ var _ = Describe("Combination controller", func() {
 
 			// Create and defer deletion of a valid template
 			err := kubeclient.Create(ctx, validTemplateCRCopy)
-			if err != nil {
-				Fail("Failed to create validTemplateCR: " + err.Error())
-			}
+			Expect(err).To(BeNil(), "failed to create template CR")
 
 			// Create and defer deletion of a valid combination
 			validCombinationCRCopy.Spec.Template = validTemplateCRCopy.Name
 			err = kubeclient.Create(ctx, validCombinationCRCopy)
-			if err != nil {
-				Fail("Failed to create validCombinationCR: " + err.Error())
-			}
+			Expect(err).To(BeNil(), "failed to create combination CR")
 		})
 
 		AfterEach(func() {
 			err := kubeclient.Delete(ctx, validCombinationCRCopy)
-			if err != nil {
-				Fail("Failed to clean-up combination after test: " + err.Error())
-			}
+			Expect(err).To(BeNil(), "failed to clean-up combination CR after test")
 
 			err = kubeclient.Delete(ctx, validTemplateCRCopy)
-			if err != nil {
-				Fail("Failed to clean-up template after test: " + err.Error())
-			}
+			Expect(err).To(BeNil(), "failed to clean-up template CR after test")
+
 			ctx.Done()
 		})
 
 		It("should get the correct evaluations and a Processed status", func() {
 			// Give up to a minute (default eventually timeout) for the combination to process properly
 			Eventually(func(g Gomega) error {
-				combinationQuery := types.NamespacedName{Name: validCombinationCRCopy.Name}
-
 				var retrievedCombination v1alpha1.Combination
-				err := kubeclient.Get(ctx, combinationQuery, &retrievedCombination)
+				err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
 
 				var conditionReasons []string
 				for _, condition := range retrievedCombination.Status.Conditions {
@@ -106,7 +97,7 @@ var _ = Describe("Combination controller", func() {
 				}
 
 				g.Expect(conditionReasons).To(ContainElement(comboConditions.ProccessedCombinationsCondition.Reason))
-				g.Expect(retrievedCombination.Status.Evaluation).To(ContainElements(expectedEvaluations))
+				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedEvaluations))
 
 				return err
 			}).Should(BeZero())
@@ -114,7 +105,7 @@ var _ = Describe("Combination controller", func() {
 
 	})
 
-	When("given healthy input and an non-existent template", func() {
+	When("given healthy input and a non-existent template", func() {
 		var ctx context.Context
 		var validCombinationCRCopy *v1alpha1.Combination
 
@@ -127,26 +118,20 @@ var _ = Describe("Combination controller", func() {
 			// Create and defer deletion of a valid combination
 			validCombinationCRCopy.Spec.Template = "doesnotexist"
 			err := kubeclient.Create(ctx, validCombinationCRCopy)
-			if err != nil {
-				Fail("Failed to create validCombinationCR: " + err.Error())
-			}
+			Expect(err).To(BeNil(), "failed to create combination CR")
 		})
 
 		AfterEach(func() {
 			err := kubeclient.Delete(ctx, validCombinationCRCopy)
-			if err != nil {
-				Fail("Failed to clean-up combination after test: " + err.Error())
-			}
+			Expect(err).To(BeNil(), "failed to clean-up combination CR after test")
 			ctx.Done()
 		})
 
 		It("should fail and output a TemplateNotFound status", func() {
 			// Give up to a minute (default eventually timeout) for the combination to process properly
 			Eventually(func() ([]string, error) {
-				combinationQuery := types.NamespacedName{Name: validCombinationCRCopy.Name}
-
 				var retrievedCombination v1alpha1.Combination
-				err := kubeclient.Get(ctx, combinationQuery, &retrievedCombination)
+				err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
 
 				var conditionReasons []string
 				for _, condition := range retrievedCombination.Status.Conditions {

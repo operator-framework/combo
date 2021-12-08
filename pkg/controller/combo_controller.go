@@ -37,11 +37,11 @@ func (c *combinationController) manageWith(mgr ctrl.Manager, version int) error 
 }
 
 // Reconcile manages incoming combination CR's and processes them accordingly
-func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request) (result reconcile.Result, deferredErr error) {
+func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request) (reconcile.Result, error) {
 	// Set up a convenient log object so we don’t have to type request over and over again
 	log := c.log.WithValues("request", req)
 
-	log.Info("new combination event inbound")
+	log.V(2).Info("new combination event inbound")
 
 	// Attempt to retrieve the requested combination CR
 	combination := &v1alpha1.Combination{}
@@ -56,14 +56,11 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 		return reconcile.Result{}, nil
 	}
 
-	log.Info(fmt.Sprintf("combination %s successfully found in reconciler", combination.Name))
-
 	// Attempt to retrieve the template referenced in the combination CR
 	template := &v1alpha1.Template{}
-	templateQuery := types.NamespacedName{Name: combination.Spec.Template}
-	if err := c.Get(ctx, templateQuery, template); err != nil {
+	if err := c.Get(ctx, types.NamespacedName{Name: combination.Spec.Template}, template); err != nil {
 		err = fmt.Errorf("failed to retrieve %v template: %w", combination.Spec.Template, err)
-		return c.manageFailure(ctx, combination, comboConditions.TemplateNotFoundCondition, err)
+		return c.updateStatusAndReturn(ctx, combination, nil, comboConditions.TemplateNotFoundCondition, err)
 	}
 
 	// Build combination stream to be utilized in template builder
@@ -76,48 +73,36 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	builder, err := templatePkg.NewBuilder(strings.NewReader(template.Spec.Body), comboStream)
 	if err != nil {
 		err = fmt.Errorf("failed to construct a builder out of %s template body: %w", template.Name, err)
-		return c.manageFailure(ctx, combination, comboConditions.TemplateBodyInvalid, err)
+		return c.updateStatusAndReturn(ctx, combination, nil, comboConditions.TemplateBodyInvalid, err)
 	}
 
 	// Build the manifest combinations
 	generatedManifests, err := builder.Build(ctx)
 	if err != nil {
 		err = fmt.Errorf("failed to generate manifest %s combinations: %w", combination.Name, err)
-		return c.manageFailure(ctx, combination, comboConditions.ManifestGenerationFailed, err)
+		return c.updateStatusAndReturn(ctx, combination, nil, comboConditions.ManifestGenerationFailed, err)
 	}
 
-	log.Info(fmt.Sprintf("reconciliation of %s combination complete!", combination.Name))
+	log.Info(fmt.Sprintf("reconciliation of %s combination successful!", combination.Name))
 
 	// Return and update the combination's status
-	return c.manageSuccess(ctx, combination, generatedManifests)
+	return c.updateStatusAndReturn(ctx, combination, generatedManifests, SuccessCondition, nil)
 }
 
-// manageSuccess takes a combination CR and its evaluation to process a successful status update for it
-func (c *combinationController) manageSuccess(ctx context.Context, combination *v1alpha1.Combination, evaluation []string) (reconcile.Result, error) {
-	// Create the new status condition to transition to
-	combination.Status.Conditions = comboConditions.NewConditions(time.Now(), nil, SuccessCondition)
-
-	combination.Status.Evaluation = evaluation
-
-	// Update the status of the combination, requeue if this update fails
-	updateErr := c.Status().Update(ctx, combination)
-	if updateErr != nil {
-		c.log.Info("Error when updating success status, requeuing: " + updateErr.Error())
-		return reconcile.Result{RequeueAfter: RequeueDefaultTime}, updateErr
-	}
-
-	return reconcile.Result{}, nil
-}
-
-// manageFailure takes a combination CR, the new condition and whatever error occurred to process a failure status update for it
-func (c *combinationController) manageFailure(ctx context.Context, combination *v1alpha1.Combination, condition metav1.Condition, err error) (reconcile.Result, error) {
+// manageFailure takes a combination CR, its evaluations, the new condition and whatever error occurred to process a status update for it
+func (c *combinationController) updateStatusAndReturn(ctx context.Context, combination *v1alpha1.Combination, evaluations []string, condition metav1.Condition, err error) (reconcile.Result, error) {
 	// Create the new status condition to transition to
 	combination.Status.Conditions = comboConditions.NewConditions(time.Now(), err, condition)
 
+	// Update the evaluations if present
+	if evaluations != nil {
+		combination.Status.Evaluations = evaluations
+	}
+
 	// Update the status of the combination, requeue if this update fails
 	updateErr := c.Status().Update(ctx, combination)
 	if updateErr != nil {
-		c.log.Info("Error when updating failure status, requeuing: " + updateErr.Error())
+		c.log.Error(updateErr, "error when updating combination status, requeuing: ")
 		return reconcile.Result{RequeueAfter: RequeueDefaultTime}, updateErr
 	}
 
