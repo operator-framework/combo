@@ -13,7 +13,7 @@ COPY pkg pkg
 COPY main.go main.go
 COPY Makefile Makefile
 
-RUN CGO_ENABLED=0 make build-cli
+RUN make build-cli
 
 # Copy the binary over to a distroless image and run it
 FROM gcr.io/distroless/static:nonroot
