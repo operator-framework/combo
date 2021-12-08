@@ -1,0 +1,10 @@
+# Build the binary
+FROM golang:1.17
+
+WORKDIR /
+
+COPY ./bin/combo ./bin/combo
+
+EXPOSE 8080
+
+CMD ["/bin/combo"]
