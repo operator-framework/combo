@@ -75,7 +75,7 @@ type CombinationStatus struct {
 	// Conditions represents the current condition of the Combination.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Represents the evaluation to this combination once processed
-	Evaluation []string `json:"evaluated,omitempty"`
+	Evaluations []string `json:"evaluated,omitempty"`
 }
 
 // +genclient

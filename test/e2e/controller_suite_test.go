@@ -43,40 +43,30 @@ var _ = BeforeSuite(func() {
 
 	var err error
 	kubeclient, err = client.New(config, client.Options{})
-	if err != nil {
-		Fail("Error while building client: " + err.Error())
-	}
+	Expect(err).To(BeNil(), "failed to build kubeclient")
 
 	err = scheme.AddToScheme(kubeclient.Scheme())
-	if err != nil {
-		Fail("Error while add schemes to client: " + err.Error())
-	}
+	Expect(err).To(BeNil(), "failed to add schemes to the kubeclient")
 
-	Context("should already have the combination CRD defined", func() {
-		Eventually(func() (bool, error) {
-			combinationCRD, err := kubeclient.RESTMapper().ResourceFor(v1alpha1.GroupVersion.WithResource("combination"))
-			return combinationCRD.Empty(), err
-		}).ShouldNot(BeTrue())
-	})
+	Eventually(func() (bool, error) {
+		combinationCRD, err := kubeclient.RESTMapper().ResourceFor(v1alpha1.GroupVersion.WithResource("combination"))
+		return combinationCRD.Empty(), err
+	}).ShouldNot(BeTrue(), "failed to validate if the combination CRD is defined")
 
-	Context("should already have the template CRD defined", func() {
-		Eventually(func() (bool, error) {
-			templateCRD, err := kubeclient.RESTMapper().ResourceFor(v1alpha1.GroupVersion.WithResource("template"))
-			return templateCRD.Empty(), err
-		}).ShouldNot(BeTrue())
-	})
+	Eventually(func() (bool, error) {
+		templateCRD, err := kubeclient.RESTMapper().ResourceFor(v1alpha1.GroupVersion.WithResource("template"))
+		return templateCRD.Empty(), err
+	}).ShouldNot(BeTrue(), "failed to validate if combination CRD is defined")
 
-	Context("should already have combo operator running and healthy", func() {
-		Eventually(func() (int, error) {
-			deployment := appsv1.Deployment{}
-			deploymentNamespace := types.NamespacedName{
-				Name:      "combo-operator",
-				Namespace: "combo",
-			}
+	Eventually(func() (int, error) {
+		deployment := appsv1.Deployment{}
+		deploymentNamespace := types.NamespacedName{
+			Name:      "combo-operator",
+			Namespace: "combo",
+		}
 
-			err = kubeclient.Get(ctx, deploymentNamespace, &deployment)
+		err = kubeclient.Get(ctx, deploymentNamespace, &deployment)
 
-			return int(deployment.Status.AvailableReplicas), err
-		}).Should(BeNumerically(">", 0))
-	})
+		return int(deployment.Status.AvailableReplicas), err
+	}).Should(BeNumerically(">", 0), "failed to validate if the combo-operator is running")
 })

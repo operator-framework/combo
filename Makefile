@@ -91,19 +91,25 @@ test-e2e: ## Run the e2e tests
 ###################
 # Running Targets #
 ###################
-.PHONY: deploy teardown run run-local
+.PHONY: deploy teardown run run-local run-e2e run-e2e-local
 deploy: generate ## Deploy the Combo operator to the current cluster
 	kubectl apply --recursive -f manifests
 
 teardown: ## Teardown the Combo operator to the current cluster
 	kubectl delete --recursive -f manifests
 
-run: build-container ## Run Combo on local Kind cluster
-	kind load docker-image $(IMAGE)
+IMAGE_LOAD_COMMAND=kind load docker-image
+run: build-container ## Run Combo on local cluster
+	$(IMAGE_LOAD_COMMAND) $(IMAGE)
 	$(MAKE) deploy
 
-run-local:
-	$(MAKE) GOOS=linux build-local-container
-	kind load docker-image $(IMAGE)
+LOCAL_CONTAINER_OS=linux
+LOCAL_CONTAINER_ARCH=amd64
+run-local: ## Run Combo on local environment with Dockerfile.local for faster deployment
+	$(MAKE) GOOS=$(LOCAL_CONTAINER_OS) GOARCH=$(LOCAL_CONTAINER_ARCH) build-local-container
+	$(IMAGE_LOAD_COMMAND) $(IMAGE)
 	$(MAKE) deploy
 
+run-e2e: run test-e2e ## Run Combo and trigger the e2e tests for it
+
+run-e2e-local: run-local test-e2e ## Run Combo on local environment and trigger e2e tests for it using Dockerfile.local

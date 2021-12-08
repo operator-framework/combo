@@ -137,8 +137,8 @@ func (in *CombinationStatus) DeepCopyInto(out *CombinationStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Evaluation != nil {
-		in, out := &in.Evaluation, &out.Evaluation
+	if in.Evaluations != nil {
+		in, out := &in.Evaluations, &out.Evaluations
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

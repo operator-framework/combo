@@ -1,5 +1,5 @@
 # Build the binary
-FROM golang:1.17
+FROM scratch
 
 WORKDIR /
 
