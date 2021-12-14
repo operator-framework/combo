@@ -18,7 +18,17 @@ var _ = Describe("Combination controller", func() {
 		},
 		Spec: v1alpha1.TemplateSpec{
 			Body:       "---\nFIRSTNAME: LASTNAME",
-			Parameters: []string{"FIRSTNAME, LASTNAME"},
+			Parameters: []string{"FIRSTNAME", "LASTNAME"},
+		},
+	}
+
+	validUpdatedTemplateCR := v1alpha1.Template{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "validtemplate",
+		},
+		Spec: v1alpha1.TemplateSpec{
+			Body:       "---\nFIRSTNAME: foo\nLASTNAME: bar",
+			Parameters: []string{"FIRSTNAME", "LASTNAME"},
 		},
 	}
 
@@ -51,6 +61,13 @@ var _ = Describe("Combination controller", func() {
 		"John: Skywalker",
 		"Luke: Snow",
 		"Luke: Skywalker",
+	}
+
+	expectedUpdatedEvaluations := []string{
+		"John: foo\nSnow: bar",
+		"John: foo\nSkywalker: bar",
+		"Luke: foo\nSkywalker: bar",
+		"Luke: foo\nSnow: bar",
 	}
 
 	When("given healthy input and a healthy template", func() {
@@ -98,6 +115,29 @@ var _ = Describe("Combination controller", func() {
 
 				g.Expect(conditionReasons).To(ContainElement(comboConditions.ProccessedCombinationsCondition.Reason))
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedEvaluations))
+
+				return err
+			}).Should(BeZero())
+		})
+
+		It("should reevaluate whenever its associated template gets updated", func() {
+			// Give up to a minute (default eventually timeout) for the combination to update after a template is updated
+			Eventually(func(g Gomega) error {
+				// Create and defer deletion of a valid template
+				validTemplateCRCopy.Spec.Body = validUpdatedTemplateCR.Spec.Body
+				err := kubeclient.Update(ctx, validTemplateCRCopy)
+				g.Expect(err).To(BeNil(), "failed to create template CR")
+
+				var retrievedCombination v1alpha1.Combination
+				err = kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
+
+				var conditionReasons []string
+				for _, condition := range retrievedCombination.Status.Conditions {
+					conditionReasons = append(conditionReasons, condition.Reason)
+				}
+
+				g.Expect(conditionReasons).To(ContainElement(comboConditions.ProccessedCombinationsCondition.Reason))
+				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedUpdatedEvaluations))
 
 				return err
 			}).Should(BeZero())
