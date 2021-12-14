@@ -15,7 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
@@ -31,9 +33,45 @@ type combinationController struct {
 // manageWith creates a new instance of this controller
 func (c *combinationController) manageWith(mgr ctrl.Manager, version int) error {
 	c.log = c.log.V(version)
+	templateHandler := handler.EnqueueRequestsFromMapFunc(c.mapTemplateToCombinations)
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.Combination{}).
+		Watches(&source.Kind{Type: &v1alpha1.Template{}}, templateHandler).
 		Complete(c)
+}
+
+func (c *combinationController) mapTemplateToCombinations(obj client.Object) []reconcile.Request {
+	if obj == nil {
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	templateName := obj.GetName()
+
+	// Find all of the combinations that rely on this template and enqueue them for updates
+	var requests []reconcile.Request
+	combinationList := v1alpha1.CombinationList{}
+	if err := c.List(ctx, &combinationList, &client.ListOptions{Namespace: obj.GetNamespace()}); err != nil {
+		c.log.V(0).Error(err, "error when listing combinatons: ")
+		return requests
+	}
+
+	for _, combination := range combinationList.Items {
+		if combination.Spec.Template == templateName {
+			c.log.Info(fmt.Sprintf("enqueueing %s combination in response to associated %s template being updated", combination.Name, templateName))
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Name:      combination.Name,
+					Namespace: obj.GetNamespace(),
+				},
+			})
+		}
+	}
+
+	return requests
 }
 
 // Reconcile manages incoming combination CR's and processes them accordingly
@@ -41,7 +79,7 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	// Set up a convenient log object so we don’t have to type request over and over again
 	log := c.log.WithValues("request", req)
 
-	log.V(2).Info("new combination event inbound")
+	log.V(1).Info("new combination event inbound")
 
 	// Attempt to retrieve the requested combination CR
 	combination := &v1alpha1.Combination{}
@@ -102,7 +140,7 @@ func (c *combinationController) updateStatusAndReturn(ctx context.Context, combi
 	// Update the status of the combination, requeue if this update fails
 	updateErr := c.Status().Update(ctx, combination)
 	if updateErr != nil {
-		c.log.Error(updateErr, "error when updating combination status, requeuing: ")
+		c.log.V(0).Error(updateErr, "error when updating combination status, requeuing: ")
 		return reconcile.Result{RequeueAfter: RequeueDefaultTime}, updateErr
 	}
 
