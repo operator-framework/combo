@@ -126,7 +126,7 @@ var _ = Describe("Combination controller", func() {
 				// Create and defer deletion of a valid template
 				validTemplateCRCopy.Spec.Body = validUpdatedTemplateCR.Spec.Body
 				err := kubeclient.Update(ctx, validTemplateCRCopy)
-				g.Expect(err).To(BeNil(), "failed to create template CR")
+				g.Expect(err).To(BeNil(), "failed to update template CR")
 
 				var retrievedCombination v1alpha1.Combination
 				err = kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)

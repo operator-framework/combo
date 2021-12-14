@@ -41,20 +41,22 @@ func (c *combinationController) manageWith(mgr ctrl.Manager, version int) error 
 		Complete(c)
 }
 
-func (c *combinationController) mapTemplateToCombinations(obj client.Object) []reconcile.Request {
-	if obj == nil {
+// mapTemplateToCombinations is responsible for taking the template object and finding all associated
+// combinations that should be requeued. This should only happen whenever a template is changed in someway.
+func (c *combinationController) mapTemplateToCombinations(template client.Object) []reconcile.Request {
+	if template == nil {
 		return nil
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	templateName := obj.GetName()
+	templateName := template.GetName()
 
 	// Find all of the combinations that rely on this template and enqueue them for updates
 	var requests []reconcile.Request
 	combinationList := v1alpha1.CombinationList{}
-	if err := c.List(ctx, &combinationList, &client.ListOptions{Namespace: obj.GetNamespace()}); err != nil {
+	if err := c.List(ctx, &combinationList, &client.ListOptions{Namespace: template.GetNamespace()}); err != nil {
 		c.log.V(0).Error(err, "error when listing combinatons: ")
 		return requests
 	}
@@ -65,7 +67,7 @@ func (c *combinationController) mapTemplateToCombinations(obj client.Object) []r
 			requests = append(requests, reconcile.Request{
 				NamespacedName: types.NamespacedName{
 					Name:      combination.Name,
-					Namespace: obj.GetNamespace(),
+					Namespace: template.GetNamespace(),
 				},
 			})
 		}
@@ -131,6 +133,7 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 func (c *combinationController) updateStatusAndReturn(ctx context.Context, combination *v1alpha1.Combination, evaluations []string, condition metav1.Condition, err error) (reconcile.Result, error) {
 	// Create the new status condition to transition to
 	combination.Status.Conditions = comboConditions.NewConditions(time.Now(), err, condition)
+	combination.Status.Phase = condition.Reason
 
 	// Update the evaluations if present
 	if evaluations != nil {
