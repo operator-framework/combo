@@ -75,7 +75,9 @@ type CombinationStatus struct {
 	// Conditions represents the current condition of the Combination.
 	Conditions []metav1.Condition `json:"conditions,omitempty"`
 	// Represents the evaluation to this combination once processed
-	Evaluations []string `json:"evaluated,omitempty"`
+	Evaluations []string `json:"evaluations,omitempty"`
+	// Phase represents a human-readable description of where the combinations is
+	Phase string `json:"phase,omitempty"`
 }
 
 // +genclient
@@ -84,6 +86,7 @@ type CombinationStatus struct {
 // +kubebuilder:storageversion
 // +kubebuilder:resource:categories=combo,scope=Cluster
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Combination is the Schema for a combination
