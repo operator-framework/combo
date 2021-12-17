@@ -17,9 +17,6 @@ spec:
   scope: Cluster
   versions:
     - additionalPrinterColumns:
-        - jsonPath: .status.phase
-          name: Status
-          type: string
         - jsonPath: .metadata.creationTimestamp
           name: Age
           type: date
@@ -122,9 +119,6 @@ spec:
                   type: array
                   items:
                     type: string
-                phase:
-                  description: Phase represents a human-readable description of where the combinations is
-                  type: string
       served: true
       storage: true
       subresources:

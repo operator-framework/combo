@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/combo/api/v1alpha1"
-	comboConditions "github.com/operator-framework/combo/pkg/conditions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -113,7 +112,7 @@ var _ = Describe("Combination controller", func() {
 					conditionReasons = append(conditionReasons, condition.Reason)
 				}
 
-				g.Expect(conditionReasons).To(ContainElement(comboConditions.ProccessedCombinationsCondition.Reason))
+				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonProcessed))
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedEvaluations))
 
 				return err
@@ -136,7 +135,7 @@ var _ = Describe("Combination controller", func() {
 					conditionReasons = append(conditionReasons, condition.Reason)
 				}
 
-				g.Expect(conditionReasons).To(ContainElement(comboConditions.ProccessedCombinationsCondition.Reason))
+				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonProcessed))
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedUpdatedEvaluations))
 
 				return err
@@ -179,7 +178,7 @@ var _ = Describe("Combination controller", func() {
 				}
 
 				return conditionReasons, err
-			}).Should(ContainElement(comboConditions.TemplateNotFoundCondition.Reason))
+			}).Should(ContainElement(v1alpha1.ReasonTemplateNotFound))
 		})
 	})
 })
