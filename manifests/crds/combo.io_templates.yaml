@@ -33,7 +33,7 @@ spec:
             metadata:
               type: object
             spec:
-              description: TemplateSpec defines the desired state of Template
+              description: TemplateSpec defines the desired state of a Template
               type: object
               required:
                 - body
