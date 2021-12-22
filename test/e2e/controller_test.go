@@ -81,11 +81,11 @@ var _ = Describe("Combination controller", func() {
 			validTemplateCRCopy = validTemplateCR.DeepCopy()
 			validCombinationCRCopy = validCombinationCR.DeepCopy()
 
-			// Create and defer deletion of a valid template
+			// Create a valid template
 			err := kubeclient.Create(ctx, validTemplateCRCopy)
 			Expect(err).To(BeNil(), "failed to create template CR")
 
-			// Create and defer deletion of a valid combination
+			// Create a valid combination
 			validCombinationCRCopy.Spec.Template = validTemplateCRCopy.Name
 			err = kubeclient.Create(ctx, validCombinationCRCopy)
 			Expect(err).To(BeNil(), "failed to create combination CR")
@@ -120,13 +120,12 @@ var _ = Describe("Combination controller", func() {
 		})
 
 		It("should reevaluate whenever its associated template gets updated", func() {
-			// Give up to a minute (default eventually timeout) for the combination to update after a template is updated
-			Eventually(func(g Gomega) error {
-				// Create and defer deletion of a valid template
-				validTemplateCRCopy.Spec.Body = validUpdatedTemplateCR.Spec.Body
-				err := kubeclient.Update(ctx, validTemplateCRCopy)
-				g.Expect(err).To(BeNil(), "failed to update template CR")
+			// Update template to trigger a requeue event
+			validTemplateCRCopy.Spec.Body = validUpdatedTemplateCR.Spec.Body
+			err := kubeclient.Update(ctx, validTemplateCRCopy)
+			Expect(err).To(BeNil(), "failed to update template CR")
 
+			Eventually(func(g Gomega) error {
 				var retrievedCombination v1alpha1.Combination
 				err = kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
 
@@ -142,6 +141,54 @@ var _ = Describe("Combination controller", func() {
 			}).Should(BeZero())
 		})
 
+		It("should have the combo.ReferencedTemplate label correctly applied on the combination", func() {
+			Eventually(func(g Gomega) error {
+				var retrievedCombination v1alpha1.Combination
+				err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
+
+				g.Expect(retrievedCombination.Labels).To(HaveKeyWithValue("combo.ReferencedTemplate", validTemplateCRCopy.Name))
+
+				return err
+			}).Should(BeZero())
+		})
+
+		It("should not requeue combinations that are not related to an updated template", func() {
+			// Create and defer deletion of an alternative template
+			altTemplate := validTemplateCR.DeepCopy()
+			altTemplate.Name = "alttemplate"
+			err := kubeclient.Create(ctx, altTemplate)
+			Expect(err).To(BeNil(), "failed to create altTemplate CR")
+
+			// Create and defer deletion of an alternative combination with the alternative template referenced
+			altCombination := validCombinationCR.DeepCopy()
+			altCombination.Spec.Template = "alttemplate"
+			altCombination.Name = "altcombination"
+			err = kubeclient.Create(ctx, altCombination)
+			Expect(err).To(BeNil(), "failed to create altCombination CR")
+
+			// Update template to trigger a requeue event
+			validTemplateCRCopy.Spec.Body = validUpdatedTemplateCR.Spec.Body
+			err = kubeclient.Update(ctx, validTemplateCRCopy)
+			Expect(err).To(BeNil(), "failed to update original template CR")
+
+			Eventually(func(g Gomega) error {
+				var retrievedCombination v1alpha1.Combination
+				err = kubeclient.Get(ctx, types.NamespacedName{Name: altCombination.Name}, &retrievedCombination)
+
+				var conditionReasons []string
+				for _, condition := range retrievedCombination.Status.Conditions {
+					conditionReasons = append(conditionReasons, condition.Reason)
+				}
+
+				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonProcessed))
+				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedEvaluations))
+
+				return err
+			}).Should(BeZero())
+
+			Expect(kubeclient.Delete(ctx, altTemplate)).To(BeNil())
+			Expect(kubeclient.Delete(ctx, altCombination)).To(BeNil())
+		})
 	})
 
 	When("given healthy input and a non-existent template", func() {
@@ -151,10 +198,10 @@ var _ = Describe("Combination controller", func() {
 		BeforeEach(func() {
 			ctx = context.Background()
 
-			// Create copies of valid CR
+			// Create a valid CR
 			validCombinationCRCopy = validCombinationCR.DeepCopy()
 
-			// Create and defer deletion of a valid combination
+			// Create a valid combination
 			validCombinationCRCopy.Spec.Template = "doesnotexist"
 			err := kubeclient.Create(ctx, validCombinationCRCopy)
 			Expect(err).To(BeNil(), "failed to create combination CR")
@@ -167,7 +214,6 @@ var _ = Describe("Combination controller", func() {
 		})
 
 		It("should fail and output a TemplateNotFound status", func() {
-			// Give up to a minute (default eventually timeout) for the combination to process properly
 			Eventually(func() ([]string, error) {
 				var retrievedCombination v1alpha1.Combination
 				err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
