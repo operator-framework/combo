@@ -8,8 +8,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/combo/api/v1alpha1"
-	combinationPkg "github.com/operator-framework/combo/pkg/combination"
-	templatePkg "github.com/operator-framework/combo/pkg/template"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,6 +18,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	combinationPkg "github.com/operator-framework/combo/pkg/combination"
+	templatePkg "github.com/operator-framework/combo/pkg/template"
+)
+
+const (
+	ReferencedTemplateLabel = "combo.ReferencedTemplate"
 )
 
 type combinationController struct {
@@ -58,7 +63,7 @@ func (c *combinationController) mapTemplateToCombinations(template client.Object
 	}
 
 	// Build the label selector for querying
-	templateSelector, err := labels.Parse("combo.ReferencedTemplate=" + templateName)
+	templateSelector, err := labels.Parse(ReferencedTemplateLabel + "=" + templateName)
 	if err != nil {
 		return requests
 	}
@@ -110,7 +115,7 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	if combination.Labels == nil {
 		combination.Labels = map[string]string{}
 	}
-	combination.Labels["combo.ReferencedTemplate"] = combination.Spec.Template
+	combination.Labels[ReferencedTemplateLabel] = combination.Spec.Template
 	if err := c.Update(ctx, combination); err != nil {
 		combination.SetStatusCondition(metav1.Condition{
 			Type:               v1alpha1.TypeInvalid,

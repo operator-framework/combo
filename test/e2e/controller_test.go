@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/combo/api/v1alpha1"
+	"github.com/operator-framework/combo/pkg/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -116,18 +117,20 @@ var _ = Describe("Combination controller", func() {
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedEvaluations))
 
 				return err
-			}).Should(BeZero())
+			}).Should(Succeed())
 		})
 
 		It("should reevaluate whenever its associated template gets updated", func() {
-			// Update template to trigger a requeue event
 			validTemplateCRCopy.Spec.Body = validUpdatedTemplateCR.Spec.Body
-			err := kubeclient.Update(ctx, validTemplateCRCopy)
-			Expect(err).To(BeNil(), "failed to update template CR")
-
 			Eventually(func(g Gomega) error {
 				var retrievedCombination v1alpha1.Combination
-				err = kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
+				if err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination); err != nil {
+					return err
+				}
+
+				if err := kubeclient.Update(ctx, validTemplateCRCopy); err != nil {
+					return err
+				}
 
 				var conditionReasons []string
 				for _, condition := range retrievedCombination.Status.Conditions {
@@ -137,19 +140,19 @@ var _ = Describe("Combination controller", func() {
 				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonProcessed))
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedUpdatedEvaluations))
 
-				return err
-			}).Should(BeZero())
+				return nil
+			}).Should(Succeed())
 		})
 
-		It("should have the combo.ReferencedTemplate label correctly applied on the combination", func() {
+		It("should have the ReferencedTemplate label correctly applied on the combination", func() {
 			Eventually(func(g Gomega) error {
 				var retrievedCombination v1alpha1.Combination
 				err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
 
-				g.Expect(retrievedCombination.Labels).To(HaveKeyWithValue("combo.ReferencedTemplate", validTemplateCRCopy.Name))
+				g.Expect(retrievedCombination.Labels).To(HaveKeyWithValue(controller.ReferencedTemplateLabel, validTemplateCRCopy.Name))
 
 				return err
-			}).Should(BeZero())
+			}).Should(Succeed())
 		})
 
 		It("should not requeue combinations that are not related to an updated template", func() {
@@ -184,7 +187,7 @@ var _ = Describe("Combination controller", func() {
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedEvaluations))
 
 				return err
-			}).Should(BeZero())
+			}).Should(Succeed())
 
 			Expect(kubeclient.Delete(ctx, altTemplate)).To(BeNil())
 			Expect(kubeclient.Delete(ctx, altCombination)).To(BeNil())
