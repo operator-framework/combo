@@ -16,12 +16,16 @@ jobs:
       with:
         go-version: '~1.17'
     - name: Install kind
+      env:
+        KIND_VERSION: v0.11.1
+        KIND_OS: kind-linux-amd64
       run: |
-        curl -sLo kind "$(curl -sL https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | jq -r '[.assets[] | select(.name == "kind-linux-amd64")] | first | .browser_download_url')"
+        curl -sLo kind "https://github.com/kubernetes-sigs/kind/releases/download/${KIND_VERSION}/${KIND_OS}"
         chmod +x kind
         sudo mv kind /bin/
     - name: Create kind cluster
       run: |
+        kind version
         kind create cluster
         kind export kubeconfig
     - name: Run e2e tests
