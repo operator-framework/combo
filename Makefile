@@ -5,11 +5,10 @@ ORG := github.com/operator-framework
 PKG := $(ORG)/combo
 VERSION_PATH := $(PKG)/pkg/version
 GIT_COMMIT := $(shell git rev-parse HEAD)
-DEFAULT_VERSION := v0.0.1
 CONTROLLER_GEN := $(Q)go run sigs.k8s.io/controller-tools/cmd/controller-gen
 GO_BUILD := $(Q)go build
 PKGS := $(shell go list ./...)
-COMBO_VERSION := $(shell git describe || echo $(DEFAULT_VERSION))
+COMBO_VERSION :=  $(shell git describe --match 'v[0-9]*' --tags --always)
 
 
 # Binary build options
