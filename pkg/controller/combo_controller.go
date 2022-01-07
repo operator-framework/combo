@@ -9,10 +9,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/combo/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -57,32 +55,21 @@ func (c *combinationController) mapTemplateToCombinations(template client.Object
 
 	// Retrieve and validate the template's name
 	templateName := template.GetName()
-	if isValid := validation.IsValidLabelValue(templateName); isValid != nil {
-		c.log.Info(fmt.Sprintf("template referenced in mapTemplateToCombinations call is not valid: %v", isValid))
-		return requests
-	}
-
-	// Build the label selector for querying
-	templateSelector, err := labels.Parse(ReferencedTemplateLabel + "=" + templateName)
-	if err != nil {
-		return requests
-	}
 
 	// Find all of the combinations that rely on this template
 	combinationList := v1alpha1.CombinationList{}
-	if err := c.List(ctx, &combinationList, &client.ListOptions{LabelSelector: templateSelector}); err != nil {
+	if err := c.List(ctx, &combinationList, &client.ListOptions{}); err != nil {
 		return requests
 	}
 
 	//  Enqueue reliant combinations for updates
 	for _, combination := range combinationList.Items {
-		c.log.Info(fmt.Sprintf("enqueueing %s combination in response to associated %s template being updated", combination.Name, templateName))
-		requests = append(requests, reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      combination.Name,
-				Namespace: template.GetNamespace(),
-			},
-		})
+		if combination.Spec.Template == templateName {
+			c.log.Info(fmt.Sprintf("enqueueing %s combination in response to associated %s template being updated", combination.Name, templateName))
+			requests = append(requests, reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: combination.Name},
+			})
+		}
 	}
 
 	return requests
@@ -110,22 +97,6 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// Remove any previous evaluation in case of failure
 	combination.Status.Evaluations = []string{}
-
-	// Apply label for the referenced template for easy watching
-	if combination.Labels == nil {
-		combination.Labels = map[string]string{}
-	}
-	combination.Labels[ReferencedTemplateLabel] = combination.Spec.Template
-	if err := c.Update(ctx, combination); err != nil {
-		combination.SetStatusCondition(metav1.Condition{
-			Type:               v1alpha1.TypeInvalid,
-			Status:             metav1.ConditionFalse,
-			Reason:             v1alpha1.ReasonTemplateNotFound,
-			LastTransitionTime: metav1.NewTime(time.Now()),
-			Message:            fmt.Sprintf("failed to retrieve %s template: %s", combination.Spec.Template, err.Error()),
-		})
-		return reconcile.Result{}, errors.NewAggregate([]error{err, c.Status().Update(ctx, combination)})
-	}
 
 	// Attempt to retrieve the template referenced in the combination CR
 	template := &v1alpha1.Template{}

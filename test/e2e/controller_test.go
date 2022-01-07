@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/combo/api/v1alpha1"
-	"github.com/operator-framework/combo/pkg/controller"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -141,17 +140,6 @@ var _ = Describe("Combination controller", func() {
 				g.Expect(retrievedCombination.Status.Evaluations).To(ContainElements(expectedUpdatedEvaluations))
 
 				return nil
-			}).Should(Succeed())
-		})
-
-		It("should have the ReferencedTemplate label correctly applied on the combination", func() {
-			Eventually(func(g Gomega) error {
-				var retrievedCombination v1alpha1.Combination
-				err := kubeclient.Get(ctx, types.NamespacedName{Name: validCombinationCRCopy.Name}, &retrievedCombination)
-
-				g.Expect(retrievedCombination.Labels).To(HaveKeyWithValue(controller.ReferencedTemplateLabel, validTemplateCRCopy.Name))
-
-				return err
 			}).Should(Succeed())
 		})
 
