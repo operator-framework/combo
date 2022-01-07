@@ -1,7 +1,8 @@
 ###########################
 # Configuration Variables #
 ###########################
-PKG := $(shell head -n 1 go.mod | awk '{print $$2}')
+ORG := github.com/operator-framework
+PKG := $(ORG)/combo
 VERSION_PATH := $(PKG)/pkg/version
 GIT_COMMIT := $(shell git rev-parse HEAD)
 DEFAULT_VERSION := v0.0.1
