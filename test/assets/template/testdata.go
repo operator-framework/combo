@@ -4,91 +4,91 @@ var BuildInput = `---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-	name: deployment-reader
+    name: deployment-reader
 rules:
 - apiGroups: ["apps"]
-	resources: ["deployments"]
-	verbs: ["get", "watch", "list"]
+  resources: ["deployments"]
+  verbs: ["get", "watch", "list"]
 ---
 kind: Namespace
 metadata:
-	name: NAMESPACE
+    name: NAMESPACE
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-	name: NAME
-	namespace: NAMESPACE
+    name: NAME
+    namespace: NAMESPACE
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-	name: deployment-reader
-	namespace: NAMESPACE
+    name: deployment-reader
+    namespace: NAMESPACE
 subjects:
 - kind: ServiceAccount
-	name: NAME
-	namespace: NAMESPACE
+  name: NAME
+  namespace: NAMESPACE
 roleRef:
-	kind: ClusterRole
-	name: deployment-reader
-	apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: deployment-reader
+    apiGroup: rbac.authorization.k8s.io
 `
 
 var BuildOutput = []string{
 	`apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-	name: deployment-reader
+    name: deployment-reader
 rules:
 - apiGroups: ["apps"]
-	resources: ["deployments"]
-	verbs: ["get", "watch", "list"]`,
+  resources: ["deployments"]
+  verbs: ["get", "watch", "list"]`,
 	`kind: Namespace
 metadata:
-	name: foo`,
+    name: foo`,
 
 	`apiVersion: v1
 kind: ServiceAccount
 metadata:
-	name: baz
-	namespace: foo`,
+    name: baz
+    namespace: foo`,
 
 	`apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-	name: deployment-reader
-	namespace: foo
+    name: deployment-reader
+    namespace: foo
 subjects:
 - kind: ServiceAccount
-	name: baz
-	namespace: foo
+  name: baz
+  namespace: foo
 roleRef:
-	kind: ClusterRole
-	name: deployment-reader
-	apiGroup: rbac.authorization.k8s.io`,
+    kind: ClusterRole
+    name: deployment-reader
+    apiGroup: rbac.authorization.k8s.io`,
 
 	`kind: Namespace
 metadata:
-	name: bar`,
+    name: bar`,
 
 	`apiVersion: v1
 kind: ServiceAccount
 metadata:
-	name: baz
-	namespace: bar`,
+    name: baz
+    namespace: bar`,
 
 	`apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-	name: deployment-reader
-	namespace: bar
+    name: deployment-reader
+    namespace: bar
 subjects:
 - kind: ServiceAccount
-	name: baz
-	namespace: bar
+  name: baz
+  namespace: bar
 roleRef:
-	kind: ClusterRole
-	name: deployment-reader
-	apiGroup: rbac.authorization.k8s.io`,
+    kind: ClusterRole
+    name: deployment-reader
+    apiGroup: rbac.authorization.k8s.io`,
 }
