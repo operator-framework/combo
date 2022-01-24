@@ -22,11 +22,23 @@ type Stream interface {
 	Next(ctx context.Context) (map[string]string, error)
 	All() ([]map[string]string, error)
 }
+
+// args: the raw data from the stream
+// parameterListFromArgs: a list of the names of the parameters
+//                        taken from the stream(args).
+// positionMapInArgs: array of integers that tracks the position
+//                    of the next combination within args.
+// lastUpdatedParameter: an integer that represents the parameter
+//                       we are currently looking at. Intializes as
+//                       second to last value in parameters.
 type stream struct {
-	combinations []map[string]string
-	args         map[string][]string
-	solveAhead   bool
-	solved       bool
+	combinations          []map[string]string
+	args                  map[string][]string
+	solveAhead            bool
+	solved                bool
+	parameterListFromArgs []string
+	positionsMapInArgs    []int
+	lastUpdatedParameter  int
 }
 
 type StreamOption func(*stream)
@@ -37,6 +49,11 @@ func NewStream(options ...StreamOption) Stream {
 	for _, option := range options {
 		option(cs)
 	}
+	for key := range cs.args {
+		cs.parameterListFromArgs = append(cs.parameterListFromArgs, key)
+		cs.positionsMapInArgs = append(cs.positionsMapInArgs, 0)
+	}
+	cs.lastUpdatedParameter = len(cs.parameterListFromArgs) - 2
 	return cs
 }
 
@@ -58,28 +75,76 @@ func WithSolveAhead() StreamOption {
 }
 
 // Next gets the next combination from the stream.
-// TODO: Currently this does not solve each combination iteratively and will
-//       need to do so in the future to ensure an optimal use of memory. This
-//       is currently more of a stub to allow consumer packages to maintain its
-// 		 interface.
+// By using this, the stream will solve each combination
+// iteratively.
 func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
-	if cs.solveAhead && !cs.solved {
-		if err := cs.solve(); err != nil {
-			return nil, err
+	// Check to see if anymore combinations exist
+	if !cs.solved {
+		// Edge case: No parameterListFromArgs
+		if len(cs.parameterListFromArgs) == 0 {
+			cs.solved = true
+			return nil, ErrNoArgsSet
 		}
-	}
 
-	if len(cs.combinations) == 0 {
-		if cs.solved {
-			return nil, nil
+		// comboList is a variable that holds a list of combinations to be returned.
+		comboList := map[string]string{}
+
+		// Generate the list of combinations based off current positions
+		for x := 0; x < len(cs.parameterListFromArgs); x++ {
+			var combo string = cs.args[cs.parameterListFromArgs[x]][cs.positionsMapInArgs[x]]
+			var key string = cs.parameterListFromArgs[x]
+			comboList[key] = combo
 		}
-		return nil, ErrCombinationsNotSolved
+
+		// Iterates through position map in reverse
+		// looking for the first updatable value then breaks loop.
+		// Otherwise, resets values to zero, we know to update last parameter based off i.
+		var i int
+		for i = len(cs.positionsMapInArgs) - 1; i > cs.lastUpdatedParameter; i-- {
+			if cs.positionsMapInArgs[i]+1 < len(cs.args[cs.parameterListFromArgs[i]]) {
+				cs.positionsMapInArgs[i]++
+				break
+			} else {
+				cs.positionsMapInArgs[i] = 0
+			}
+		}
+
+		// Checks to see if we need to update lastParameter based
+		// off value of i.
+		if i == cs.lastUpdatedParameter {
+			// Checks to see if this is the last argument of the parameter.
+			// Then updates parameter, and checks to see if the combination is solved.
+			if cs.positionsMapInArgs[cs.lastUpdatedParameter]+1 == len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]]) {
+				cs.positionsMapInArgs[cs.lastUpdatedParameter] = 0
+				cs.lastUpdatedParameter--
+				if cs.lastUpdatedParameter == -1 {
+					cs.solved = true
+				}
+			}
+			// If combination is not solved, we find the next lastUpdatedParameter,
+			// if lastUpdatedParameter has only 1 argument. Also, will mark as solved
+			// if reach end up parameters.
+			if !cs.solved {
+				runner := true
+				for runner {
+					length := len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]])
+					if length == 1 {
+						cs.lastUpdatedParameter--
+					} else {
+						runner = false
+						cs.positionsMapInArgs[cs.lastUpdatedParameter]++
+					}
+					if cs.lastUpdatedParameter == -1 {
+						cs.solved = true
+						runner = false
+					}
+				}
+			}
+		}
+
+		return comboList, nil
 	}
-
-	next := cs.combinations[0]
-	cs.combinations = cs.combinations[1:]
-
-	return next, nil
+	return nil, nil
 }
 
 // All retrieves all of the combinations from the stream
