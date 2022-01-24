@@ -35,6 +35,14 @@ var combinationTests = []struct {
 			err:          nil,
 		},
 	},
+	{
+		name:  "standard set of long args",
+		input: testdata.LongCombinationInput,
+		expected: expected{
+			combinations: testdata.LongCombinationOutput,
+			err:          nil,
+		},
+	},
 }
 
 func TestAll(t *testing.T) {

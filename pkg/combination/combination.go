@@ -78,73 +78,66 @@ func WithSolveAhead() StreamOption {
 // By using this, the stream will solve each combination
 // iteratively.
 func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
-	// Check to see if anymore combinations exist
-	if !cs.solved {
-		// Edge case: No parameterListFromArgs
-		if len(cs.parameterListFromArgs) == 0 {
-			cs.solved = true
-			return nil, ErrNoArgsSet
-		}
-
-		// comboList is a variable that holds a list of combinations to be returned.
-		comboList := map[string]string{}
-
-		// Generate the list of combinations based off current positions
-		for x := 0; x < len(cs.parameterListFromArgs); x++ {
-			var combo string = cs.args[cs.parameterListFromArgs[x]][cs.positionsMapInArgs[x]]
-			var key string = cs.parameterListFromArgs[x]
-			comboList[key] = combo
-		}
-
-		// Iterates through position map in reverse
-		// looking for the first updatable value then breaks loop.
-		// Otherwise, resets values to zero, we know to update last parameter based off i.
-		var i int
-		for i = len(cs.positionsMapInArgs) - 1; i > cs.lastUpdatedParameter; i-- {
-			if cs.positionsMapInArgs[i]+1 < len(cs.args[cs.parameterListFromArgs[i]]) {
-				cs.positionsMapInArgs[i]++
-				break
-			} else {
-				cs.positionsMapInArgs[i] = 0
-			}
-		}
-
-		// Checks to see if we need to update lastParameter based
-		// off value of i.
-		if i == cs.lastUpdatedParameter {
-			// Checks to see if this is the last argument of the parameter.
-			// Then updates parameter, and checks to see if the combination is solved.
-			if cs.positionsMapInArgs[cs.lastUpdatedParameter]+1 == len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]]) {
-				cs.positionsMapInArgs[cs.lastUpdatedParameter] = 0
-				cs.lastUpdatedParameter--
-				if cs.lastUpdatedParameter == -1 {
-					cs.solved = true
-				}
-			}
-			// If combination is not solved, we find the next lastUpdatedParameter,
-			// if lastUpdatedParameter has only 1 argument. Also, will mark as solved
-			// if reach end up parameters.
-			if !cs.solved {
-				runner := true
-				for runner {
-					length := len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]])
-					if length == 1 {
-						cs.lastUpdatedParameter--
-					} else {
-						runner = false
-						cs.positionsMapInArgs[cs.lastUpdatedParameter]++
-					}
-					if cs.lastUpdatedParameter == -1 {
-						cs.solved = true
-						runner = false
-					}
-				}
-			}
-		}
-
-		return comboList, nil
+	if cs.solved {
+		return nil, nil
 	}
-	return nil, nil
+	// Check to see if anymore combinations exist
+
+	// Edge case: No parameterListFromArgs
+	if len(cs.parameterListFromArgs) == 0 {
+		cs.solved = true
+		return nil, ErrNoArgsSet
+	}
+
+	// comboList is a variable that holds a list of combinations to be returned.
+	comboList := map[string]string{}
+
+	// Generate the list of combinations based off current positions
+	for x := 0; x < len(cs.parameterListFromArgs); x++ {
+		combo := cs.args[cs.parameterListFromArgs[x]][cs.positionsMapInArgs[x]]
+		key := cs.parameterListFromArgs[x]
+		comboList[key] = combo
+	}
+
+	// Iterates through position map in reverse
+	// looking for the first updatable value then breaks loop.
+	// Otherwise, resets values to zero, we know to update last parameter based off i.
+	var i int
+	for i = len(cs.positionsMapInArgs) - 1; i > cs.lastUpdatedParameter; i-- {
+		if cs.positionsMapInArgs[i]+1 < len(cs.args[cs.parameterListFromArgs[i]]) {
+			cs.positionsMapInArgs[i]++
+			break
+		} else {
+			cs.positionsMapInArgs[i] = 0
+		}
+	}
+
+	// Checks to see if we need to update lastParameter based
+	// off value of i.
+	if i == cs.lastUpdatedParameter {
+		// Checks to see if this is the last argument of the parameter.
+		// Then updates parameter, and checks to see if the combination is solved.
+		if cs.positionsMapInArgs[cs.lastUpdatedParameter]+1 == len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]]) {
+			cs.positionsMapInArgs[cs.lastUpdatedParameter] = 0
+			cs.lastUpdatedParameter--
+		}
+		// If combination is not solved, we find the next lastUpdatedParameter,
+		// if lastUpdatedParameter has only 1 argument. Also, will mark as solved
+		// if reach end up parameters.
+		runner := true
+		for (!cs.solved) && (runner) && (cs.lastUpdatedParameter != -1) {
+			if len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]]) == 1 {
+				cs.lastUpdatedParameter--
+			} else {
+				runner = false
+				cs.positionsMapInArgs[cs.lastUpdatedParameter]++
+			}
+		}
+	}
+	if cs.lastUpdatedParameter == -1 {
+		cs.solved = true
+	}
+	return comboList, nil
 }
 
 // All retrieves all of the combinations from the stream
