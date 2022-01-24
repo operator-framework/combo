@@ -14,19 +14,21 @@ var (
 )
 
 // Stream is a representation of all possible combinations
-// its args. Can use either the Next() function to get each
-// combination one at a time or All() to get them all.
-// WithSolveAhead() ensures that the combinations are generated
-// before each call to Next() or All() but is only run once.
+// its args. That uses the Next() function to get each
+// combination. WithSolveAhead() ensures combinations are generated
+// all at once using. If not, it will solve iterativey with nextIterativeCombination()
 type Stream interface {
 	Next(ctx context.Context) (map[string]string, error)
-	All() ([]map[string]string, error)
 }
+
 type stream struct {
-	combinations []map[string]string
-	args         map[string][]string
-	solveAhead   bool
-	solved       bool
+	combinations          []map[string]string
+	args                  map[string][]string // the raw data from the stream
+	solveAhead            bool                // if true the Next() function will solve combinations all at once using nextPreSolvedCombination()
+	solved                bool
+	parameterListFromArgs []string // a list of the names of the parameters taken from the stream(args).
+	positionsMapInArgs    []int    // array of integers that tracks the position of the next combination within args.
+	nextParameterToUpdate int      // an integer that represents the parameter we are currently looking at. Intializes as second to last value in parameters.
 }
 
 type StreamOption func(*stream)
@@ -37,6 +39,11 @@ func NewStream(options ...StreamOption) Stream {
 	for _, option := range options {
 		option(cs)
 	}
+	for key := range cs.args {
+		cs.parameterListFromArgs = append(cs.parameterListFromArgs, key)
+		cs.positionsMapInArgs = append(cs.positionsMapInArgs, 0)
+	}
+	cs.nextParameterToUpdate = len(cs.parameterListFromArgs) - 2 // Intializes nextParameterToUpdate to point to the second to last element in parameterList...
 	return cs
 }
 
@@ -51,18 +58,84 @@ func WithArgs(args map[string][]string) StreamOption {
 // only occurs on the first call to Next or All. By using this, the Stream
 // will solve all possible combinations of its args which could take a lot
 // of computation given a large enough input.
-func WithSolveAhead() StreamOption {
+func WithSolveAhead(boolVar ...bool) StreamOption {
+	boolVarValue := false
+	if len(boolVar) > 0 {
+		boolVarValue = boolVar[0]
+	}
 	return func(cs *stream) {
-		cs.solveAhead = true
+		cs.solveAhead = boolVarValue
 	}
 }
 
-// Next gets the next combination from the stream.
-// TODO: Currently this does not solve each combination iteratively and will
-//       need to do so in the future to ensure an optimal use of memory. This
-//       is currently more of a stub to allow consumer packages to maintain its
-// 		 interface.
-func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
+// nextIterativeCombination() gets the next combination from the stream.
+// By using this, the stream will solve each combination
+// iteratively.
+func (cs *stream) nextIterativeCombination() (map[string]string, error) {
+	if cs.solved {
+		return nil, nil
+	}
+	// Check to see if anymore combinations exist
+
+	// Edge case: No parameterListFromArgs
+	if len(cs.parameterListFromArgs) == 0 {
+		cs.solved = true
+		return nil, ErrNoArgsSet
+	}
+
+	// comboList is a variable that holds a list of combinations to be returned.
+	comboList := map[string]string{}
+
+	// Generate the list of combinations based off current positions
+	for x := 0; x < len(cs.parameterListFromArgs); x++ {
+		combo := cs.args[cs.parameterListFromArgs[x]][cs.positionsMapInArgs[x]]
+		key := cs.parameterListFromArgs[x]
+		comboList[key] = combo
+	}
+
+	// Iterates through position map in reverse
+	// looking for the first updatable value then breaks loop.
+	// Otherwise, resets values to zero, we know to update last parameter based off i.
+	var i int
+	for i = len(cs.positionsMapInArgs) - 1; i > cs.nextParameterToUpdate; i-- {
+		if cs.positionsMapInArgs[i]+1 < len(cs.args[cs.parameterListFromArgs[i]]) {
+			cs.positionsMapInArgs[i]++
+			break
+		}
+		cs.positionsMapInArgs[i] = 0
+	}
+
+	// Checks to see if we need to update lastParameter based
+	// off value of i.
+	if i == cs.nextParameterToUpdate {
+		// Checks to see if this is the last argument of the parameter.
+		// Then updates parameter, and checks to see if the combination is solved.
+		if cs.positionsMapInArgs[cs.nextParameterToUpdate]+1 == len(cs.args[cs.parameterListFromArgs[cs.nextParameterToUpdate]]) {
+			cs.positionsMapInArgs[cs.nextParameterToUpdate] = 0
+			cs.nextParameterToUpdate--
+		}
+		// If combination is not solved, we find the next nextParameterToUpdate,
+		// if nextParameterToUpdate has only 1 argument. Also, will mark as solved
+		// if reach end up parameters.
+		continueIterating := true
+		for !cs.solved && continueIterating && cs.nextParameterToUpdate != -1 {
+			if len(cs.args[cs.parameterListFromArgs[cs.nextParameterToUpdate]]) == 1 {
+				cs.nextParameterToUpdate--
+				continue
+			}
+			continueIterating = false
+			cs.positionsMapInArgs[cs.nextParameterToUpdate]++
+		}
+	}
+	if cs.nextParameterToUpdate == -1 {
+		cs.solved = true
+	}
+	return comboList, nil
+}
+
+// nextPreSolvedCombination() generates all combinations at once.
+// Once combinations are generated it will return the next combination.
+func (cs *stream) nextPreSolvedCombination() (map[string]string, error) {
 	if cs.solveAhead && !cs.solved {
 		if err := cs.solve(); err != nil {
 			return nil, err
@@ -75,29 +148,9 @@ func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
 		}
 		return nil, ErrCombinationsNotSolved
 	}
-
-	next := cs.combinations[0]
+	combo := cs.combinations[0]
 	cs.combinations = cs.combinations[1:]
-
-	return next, nil
-}
-
-// All retrieves all of the combinations from the stream
-func (cs *stream) All() ([]map[string]string, error) {
-	if cs.solveAhead && !cs.solved {
-		if err := cs.solve(); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(cs.combinations) == 0 {
-		if cs.solved {
-			return nil, nil
-		}
-		return nil, ErrCombinationsNotSolved
-	}
-
-	return cs.combinations, nil
+	return combo, nil
 }
 
 // solve takes the current stream and its args to solve their combinations
@@ -147,4 +200,14 @@ func (cs *stream) solve() error {
 	cs.solved = true
 
 	return nil
+}
+
+// Next generates the combinations iteartively. If the solveAhead = true,
+// the combinations are generated all at once then the next one will be returned
+// within the list of cs.combinations.
+func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
+	if cs.solveAhead {
+		return cs.nextPreSolvedCombination()
+	}
+	return cs.nextIterativeCombination()
 }
