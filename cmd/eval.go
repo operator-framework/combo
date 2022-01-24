@@ -4,16 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/operator-framework/combo/pkg/combination"
-	comboErrors "github.com/operator-framework/combo/pkg/errors"
 	"github.com/operator-framework/combo/pkg/template"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -39,22 +36,6 @@ func formatReplacements(replacements map[string]string) map[string][]string {
 		formattedReplacements[key] = strings.Split(val, ",")
 	}
 	return formattedReplacements
-}
-
-// validateFile is a simple wrapper to ensure the file we're using exists, is readable,
-// and is valid YAML
-func validateFile(file io.Reader) error {
-	fileBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("%w: %s", comboErrors.ErrCouldNotReadFile, err.Error())
-	}
-
-	if len(fileBytes) == 0 {
-		return ErrEmptyFile
-	}
-
-	var holder interface{}
-	return yaml.Unmarshal(fileBytes, &holder)
 }
 
 var (
@@ -98,17 +79,17 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-
 			combinedTemplateManifests, err := templateBuilder.Build(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to build manifests with combinations: %w", err)
 			}
 
-			combinedTemplate := "---\n" + strings.Join(combinedTemplateManifests, "\n---\n")
-
-			if err := validateFile(strings.NewReader(combinedTemplate)); err != nil {
-				return fmt.Errorf("failed to validate combined template constructed: %w", err)
+			if len(combinedTemplateManifests) == 0 {
+				logrus.Warn("resulting combinations are empty")
+				return nil
 			}
+
+			combinedTemplate := "---\n" + strings.Join(combinedTemplateManifests, "\n---\n")
 
 			fmt.Println(combinedTemplate)
 

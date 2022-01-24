@@ -26,7 +26,6 @@ func NewBuilder(file io.Reader, combinations CombinationStream) (Builder, error)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build template: %w", err)
 	}
-
 	return &builder{
 		template:     compiledTemplate,
 		combinations: combinations,
@@ -50,7 +49,6 @@ func (g *builder) Build(ctx context.Context) ([]string, error) {
 			if combination == nil {
 				return g.template.processedManifests, nil
 			}
-
 			g.template.with(combination)
 		}
 	}

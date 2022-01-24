@@ -1,6 +1,7 @@
 package template
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -8,6 +9,11 @@ import (
 	"strings"
 
 	comboErrors "github.com/operator-framework/combo/pkg/errors"
+	"gopkg.in/yaml.v3"
+)
+
+var (
+	ErrInvalidYAML = errors.New("invalid yaml")
 )
 
 // template contains an array of manifests that can be
@@ -17,13 +23,24 @@ type template struct {
 	processedManifests []string
 }
 
+// validateFile is a simple wrapper to ensure the manifests we're using are valid YAML
+func (t *template) validate() error {
+	for i, manifest := range t.manifests {
+		var holder interface{}
+		if err := yaml.Unmarshal([]byte(manifest), &holder); err != nil {
+			return fmt.Errorf("%w: manifest %v: %s", ErrInvalidYAML, i, err.Error())
+		}
+	}
+
+	return nil
+}
+
 func newTemplate(file io.Reader) (template, error) {
 	// Separate the manifests by the yaml separator and build a template with them
 	fileBytes, err := ioutil.ReadAll(file)
 	if err != nil {
 		return template{}, fmt.Errorf("%w: %s", comboErrors.ErrCouldNotReadFile, err.Error())
 	}
-
 	manifests := strings.Split(string(fileBytes), "---")
 
 	var constructedTemplate template
@@ -32,6 +49,10 @@ func newTemplate(file io.Reader) (template, error) {
 		if trimmedManifest != "" {
 			constructedTemplate.manifests = append(constructedTemplate.manifests, trimmedManifest)
 		}
+	}
+
+	if err := constructedTemplate.validate(); err != nil {
+		return constructedTemplate, fmt.Errorf("failed to validate file specified: %w", err)
 	}
 
 	return constructedTemplate, nil

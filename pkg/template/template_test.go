@@ -198,3 +198,44 @@ func TestWith(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateFile(t *testing.T) {
+	for _, tt := range []struct {
+		name  string
+		input template
+		err   error
+	}{
+		{
+			name: "validates a valid file correctly",
+			input: template{
+				manifests: []string{
+					"testOne: NAMESPACE",
+					"testTwo: NAME",
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "validates an empty file",
+			input: template{
+				processedManifests: []string{},
+			},
+			err: nil,
+		},
+		{
+			name: "invalidates an unreadable file",
+			input: template{
+				manifests: []string{
+					"	apiVersion: rbac.authorization.k8s.io/v1",
+					"kind: ClusterRole",
+				},
+			},
+			err: ErrInvalidYAML,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.input.validate()
+			require.ErrorIs(t, err, tt.err)
+		})
+	}
+}
