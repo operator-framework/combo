@@ -23,22 +23,14 @@ type Stream interface {
 	All() ([]map[string]string, error)
 }
 
-// args: the raw data from the stream
-// parameterListFromArgs: a list of the names of the parameters
-//                        taken from the stream(args).
-// positionMapInArgs: array of integers that tracks the position
-//                    of the next combination within args.
-// lastUpdatedParameter: an integer that represents the parameter
-//                       we are currently looking at. Intializes as
-//                       second to last value in parameters.
 type stream struct {
 	combinations          []map[string]string
-	args                  map[string][]string
+	args                  map[string][]string // args: the raw data from the stream
 	solveAhead            bool
 	solved                bool
-	parameterListFromArgs []string
-	positionsMapInArgs    []int
-	lastUpdatedParameter  int
+	parameterListFromArgs []string // a list of the names of the parameters taken from the stream(args).
+	positionsMapInArgs    []int    // array of integers that tracks the position of the next combination within args.
+	nextParameterToUpdate int      // an integer that represents the parameter we are currently looking at. Intializes as second to last value in parameters.
 }
 
 type StreamOption func(*stream)
@@ -53,7 +45,7 @@ func NewStream(options ...StreamOption) Stream {
 		cs.parameterListFromArgs = append(cs.parameterListFromArgs, key)
 		cs.positionsMapInArgs = append(cs.positionsMapInArgs, 0)
 	}
-	cs.lastUpdatedParameter = len(cs.parameterListFromArgs) - 2
+	cs.nextParameterToUpdate = len(cs.parameterListFromArgs) - 2 // Intializes nextParameterToUpdate to point to the second to last element in parameterList...
 	return cs
 }
 
@@ -103,7 +95,7 @@ func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
 	// looking for the first updatable value then breaks loop.
 	// Otherwise, resets values to zero, we know to update last parameter based off i.
 	var i int
-	for i = len(cs.positionsMapInArgs) - 1; i > cs.lastUpdatedParameter; i-- {
+	for i = len(cs.positionsMapInArgs) - 1; i > cs.nextParameterToUpdate; i-- {
 		if cs.positionsMapInArgs[i]+1 < len(cs.args[cs.parameterListFromArgs[i]]) {
 			cs.positionsMapInArgs[i]++
 			break
@@ -114,27 +106,27 @@ func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
 
 	// Checks to see if we need to update lastParameter based
 	// off value of i.
-	if i == cs.lastUpdatedParameter {
+	if i == cs.nextParameterToUpdate {
 		// Checks to see if this is the last argument of the parameter.
 		// Then updates parameter, and checks to see if the combination is solved.
-		if cs.positionsMapInArgs[cs.lastUpdatedParameter]+1 == len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]]) {
-			cs.positionsMapInArgs[cs.lastUpdatedParameter] = 0
-			cs.lastUpdatedParameter--
+		if cs.positionsMapInArgs[cs.nextParameterToUpdate]+1 == len(cs.args[cs.parameterListFromArgs[cs.nextParameterToUpdate]]) {
+			cs.positionsMapInArgs[cs.nextParameterToUpdate] = 0
+			cs.nextParameterToUpdate--
 		}
-		// If combination is not solved, we find the next lastUpdatedParameter,
-		// if lastUpdatedParameter has only 1 argument. Also, will mark as solved
+		// If combination is not solved, we find the next nextParameterToUpdate,
+		// if nextParameterToUpdate has only 1 argument. Also, will mark as solved
 		// if reach end up parameters.
 		runner := true
-		for (!cs.solved) && (runner) && (cs.lastUpdatedParameter != -1) {
-			if len(cs.args[cs.parameterListFromArgs[cs.lastUpdatedParameter]]) == 1 {
-				cs.lastUpdatedParameter--
+		for !cs.solved && runner && cs.nextParameterToUpdate != -1 {
+			if len(cs.args[cs.parameterListFromArgs[cs.nextParameterToUpdate]]) == 1 {
+				cs.nextParameterToUpdate--
 			} else {
 				runner = false
-				cs.positionsMapInArgs[cs.lastUpdatedParameter]++
+				cs.positionsMapInArgs[cs.nextParameterToUpdate]++
 			}
 		}
 	}
-	if cs.lastUpdatedParameter == -1 {
+	if cs.nextParameterToUpdate == -1 {
 		cs.solved = true
 	}
 	return comboList, nil
@@ -154,7 +146,6 @@ func (cs *stream) All() ([]map[string]string, error) {
 		}
 		return nil, ErrCombinationsNotSolved
 	}
-
 	return cs.combinations, nil
 }
 
