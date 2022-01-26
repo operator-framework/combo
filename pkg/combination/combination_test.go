@@ -50,7 +50,7 @@ func TestAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			combinationStream := NewStream(
 				WithArgs(tt.input),
-				WithSolveAhead(),
+				WithSolveAhead(true),
 			)
 
 			var got []map[string]string

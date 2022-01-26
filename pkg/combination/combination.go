@@ -3,6 +3,7 @@ package combination
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/jinzhu/copier"
 )
@@ -20,7 +21,6 @@ var (
 // before each call to Next() or All() but is only run once.
 type Stream interface {
 	Next(ctx context.Context) (map[string]string, error)
-	//All() ([]map[string]string, error)
 }
 
 type stream struct {
@@ -60,16 +60,17 @@ func WithArgs(args map[string][]string) StreamOption {
 // only occurs on the first call to Next or All. By using this, the Stream
 // will solve all possible combinations of its args which could take a lot
 // of computation given a large enough input.
-func WithSolveAhead() StreamOption {
+func WithSolveAhead(solveAheadVar bool) StreamOption {
 	return func(cs *stream) {
-		cs.solveAhead = true
+		cs.solveAhead = solveAheadVar
 	}
 }
 
-// Next gets the next combination from the stream.
+// nextIterative gets the next combination from the stream.
 // By using this, the stream will solve each combination
 // iteratively.
-func (cs *stream) nextIterative(ctx context.Context) (map[string]string, error) {
+func (cs *stream) nextIterative() (map[string]string, error) {
+	fmt.Println("nextIterative() used.")
 	if cs.solved {
 		return nil, nil
 	}
@@ -132,8 +133,10 @@ func (cs *stream) nextIterative(ctx context.Context) (map[string]string, error) 
 	return comboList, nil
 }
 
-// All retrieves all of the combinations from the stream
+// nextAll generates all combinations at once.
+// Once combinations are generated it will return the next combination.
 func (cs *stream) nextAll() (map[string]string, error) {
+	fmt.Println("nextAll() used.")
 	if cs.solveAhead && !cs.solved {
 		if err := cs.solve(); err != nil {
 			return nil, err
@@ -200,9 +203,10 @@ func (cs *stream) solve() error {
 	return nil
 }
 
+// Next generates the combinations iteartively or all at once.
 func (cs *stream) Next(ctx context.Context) (map[string]string, error) {
 	if cs.solveAhead {
 		return cs.nextAll()
 	}
-	return cs.nextIterative(ctx)
+	return cs.nextIterative()
 }

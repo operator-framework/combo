@@ -114,7 +114,7 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	// Build combination stream to be utilized in template builder
 	comboStream := combinationPkg.NewStream(
 		combinationPkg.WithArgs(formatArguments(combination.Spec.Arguments)),
-		combinationPkg.WithSolveAhead(),
+		combinationPkg.WithSolveAhead(true),
 	)
 
 	// Create a new template builder

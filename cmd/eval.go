@@ -19,10 +19,13 @@ import (
 var (
 	ErrEmptyFile      = errors.New("empty file")
 	FilePathArgsIndex = 0
+	useSolvedAhead    bool
 )
 
 func init() {
 	evalCmd.Flags().StringToStringP("replacements", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
+	evalCmd.Flags().BoolVarP(&useSolvedAhead, "all", "a", false, "Toggles how combinations are generated. When applied combinations are generated all at once compared to iteratively.")
+	// evalCmd.Flags().StringToStringP
 	if err := evalCmd.MarkFlagRequired("replacements"); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize eval: %v", err)
 		os.Exit(1)
@@ -43,6 +46,7 @@ func formatReplacements(replacements map[string]string) map[string][]string {
 // and is valid YAML
 func validateFile(file io.Reader) error {
 	fileBytes, err := ioutil.ReadAll(file)
+	fmt.Println(string(fileBytes))
 	if err != nil {
 		return fmt.Errorf("%w: %s", comboErrors.ErrCouldNotReadFile, err.Error())
 	}
@@ -85,7 +89,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 
 			combinations := combination.NewStream(
 				combination.WithArgs(formatReplacements(replacements)),
-				combination.WithSolveAhead(),
+				combination.WithSolveAhead(useSolvedAhead),
 			)
 
 			templateBuilder, err := template.NewBuilder(templateFile, combinations)
