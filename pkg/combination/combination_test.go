@@ -45,12 +45,12 @@ var combinationTests = []struct {
 	},
 }
 
-func TestAll(t *testing.T) {
+func TestNext(t *testing.T) {
+	// Test 1: Uses testIterative()
 	for _, tt := range combinationTests {
 		t.Run(tt.name, func(t *testing.T) {
 			combinationStream := NewStream(
 				WithArgs(tt.input),
-				WithSolveAhead(true),
 			)
 
 			var got []map[string]string
@@ -61,7 +61,7 @@ func TestAll(t *testing.T) {
 			for {
 				next, err := combinationStream.Next(ctx)
 				if !errors.Is(err, tt.expected.err) {
-					t.Fatal("error received while processing combination stream:", err)
+					t.Fatal("[TEST nextIterative()] error received while processing combination stream:", err)
 				}
 
 				if next == nil {
@@ -70,16 +70,16 @@ func TestAll(t *testing.T) {
 
 				got = append(got, next)
 			}
-			require.ElementsMatch(t, got, tt.expected.combinations, "Combos generated incorrectly")
+			require.ElementsMatch(t, got, tt.expected.combinations, "[TEST nextIterative()] Combos generated incorrectly")
 		})
 	}
-}
 
-func TestNext(t *testing.T) {
+	// Test 2: Uses nextPreSolvedCombinations()
 	for _, tt := range combinationTests {
 		t.Run(tt.name, func(t *testing.T) {
 			combinationStream := NewStream(
 				WithArgs(tt.input),
+				WithSolveAhead(),
 			)
 
 			var got []map[string]string
@@ -90,7 +90,7 @@ func TestNext(t *testing.T) {
 			for {
 				next, err := combinationStream.Next(ctx)
 				if !errors.Is(err, tt.expected.err) {
-					t.Fatal("error received while processing combination stream:", err)
+					t.Fatal("[TEST nextPreSolvedCombinations()] error received while processing combination stream:", err)
 				}
 
 				if next == nil {
@@ -99,7 +99,7 @@ func TestNext(t *testing.T) {
 
 				got = append(got, next)
 			}
-			require.ElementsMatch(t, got, tt.expected.combinations, "Combos generated incorrectly")
+			require.ElementsMatch(t, got, tt.expected.combinations, "[TEST nextPreSolvedCombinations()] Combos generated incorrectly")
 		})
 	}
 }

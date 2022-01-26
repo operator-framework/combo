@@ -31,7 +31,7 @@ func TestBuild(t *testing.T) {
 					"NAMESPACE": {"foo", "bar"},
 					"NAME":      {"baz"},
 				}),
-				combination.WithSolveAhead(true),
+				combination.WithSolveAhead(),
 			),
 		},
 		{
@@ -44,7 +44,7 @@ func TestBuild(t *testing.T) {
 					"NAMESPACE": {"foo", "bar"},
 					"NAME":      {"baz"},
 				}),
-				combination.WithSolveAhead(true),
+				combination.WithSolveAhead(),
 			),
 		},
 		{
@@ -58,7 +58,7 @@ func TestBuild(t *testing.T) {
 					"NAMESPACE": {"foo", "bar"},
 					"NAME":      {"baz"},
 				}),
-				combination.WithSolveAhead(true),
+				combination.WithSolveAhead(),
 			),
 		},
 	} {
