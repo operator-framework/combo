@@ -13,7 +13,7 @@ import (
 	comboErrors "github.com/operator-framework/combo/pkg/errors"
 	"github.com/operator-framework/combo/pkg/template"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -54,6 +54,7 @@ func validateFile(file io.Reader) error {
 	}
 
 	var holder interface{}
+
 	return yaml.Unmarshal(fileBytes, &holder)
 }
 
@@ -81,10 +82,6 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				return fmt.Errorf("failed to read file specified: %w", err)
 			}
 
-			if err := validateFile(templateFile); err != nil {
-				return fmt.Errorf("failed to validate file specified: %w", err)
-			}
-
 			var combinations combination.Stream
 			if useSolvedAhead {
 				combinations = combination.NewStream(
@@ -98,13 +95,13 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 			}
 
 			templateBuilder, err := template.NewBuilder(templateFile, combinations)
+
 			if err != nil {
 				return fmt.Errorf("failed to construct builder: %w", err)
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
-
 			combinedTemplateManifests, err := templateBuilder.Build(ctx)
 			if err != nil {
 				return fmt.Errorf("failed to build manifests with combinations: %w", err)
@@ -112,13 +109,14 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 
 			combinedTemplate := "---\n" + strings.Join(combinedTemplateManifests, "\n---\n")
 
+			// validate created file
 			if err := validateFile(strings.NewReader(combinedTemplate)); err != nil {
 				return fmt.Errorf("failed to validate combined template constructed: %w", err)
 			}
 
 			fmt.Println(combinedTemplate)
 
-			return nil
+			return err
 		},
 	}
 )
