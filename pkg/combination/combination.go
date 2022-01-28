@@ -58,9 +58,13 @@ func WithArgs(args map[string][]string) StreamOption {
 // only occurs on the first call to Next or All. By using this, the Stream
 // will solve all possible combinations of its args which could take a lot
 // of computation given a large enough input.
-func WithSolveAhead() StreamOption {
+func WithSolveAhead(boolVar ...bool) StreamOption {
+	boolVarValue := false
+	if len(boolVar) > 0 {
+		boolVarValue = boolVar[0]
+	}
 	return func(cs *stream) {
-		cs.solveAhead = true
+		cs.solveAhead = boolVarValue
 	}
 }
 

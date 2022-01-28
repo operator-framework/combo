@@ -19,12 +19,14 @@ import (
 var (
 	ErrEmptyFile      = errors.New("empty file")
 	FilePathArgsIndex = 0
-	useSolvedAhead    bool
 )
 
 func init() {
 	evalCmd.Flags().StringToStringP("replacements", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
-	evalCmd.Flags().BoolVarP(&useSolvedAhead, "presolve", "p", false, "Toggles how combinations are generated. When applied combinations are generated all at once compared to iteratively.")
+
+	var tempSolvedAhead bool
+	evalCmd.Flags().BoolVarP(&tempSolvedAhead, "presolve", "p", false, "Toggles how combinations are generated. When applied combinations are generated all at once compared to iteratively.")
+
 	if err := evalCmd.MarkFlagRequired("replacements"); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize eval: %v", err)
 		os.Exit(1)
@@ -77,22 +79,21 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				return fmt.Errorf("failed to access replacements flag: %w", err)
 			}
 
+			useSolvedAhead, err := cmd.Flags().GetBool("presolve")
+			if err != nil {
+				return err
+			}
+
 			templateFile, err := os.Open(args[FilePathArgsIndex])
 			if err != nil {
 				return fmt.Errorf("failed to read file specified: %w", err)
 			}
 
-			var combinations combination.Stream
-			if useSolvedAhead {
-				combinations = combination.NewStream(
-					combination.WithArgs(formatReplacements(replacements)),
-					combination.WithSolveAhead(),
-				)
-			} else {
-				combinations = combination.NewStream(
-					combination.WithArgs(formatReplacements(replacements)),
-				)
-			}
+			combinations := combination.NewStream(
+				combination.WithArgs(formatReplacements(replacements)),
+				combination.WithSolveAhead(useSolvedAhead),
+			)
+
 			templateBuilder, err := template.NewBuilder(templateFile, combinations)
 
 			if err != nil {
