@@ -93,7 +93,6 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 					combination.WithArgs(formatReplacements(replacements)),
 				)
 			}
-
 			templateBuilder, err := template.NewBuilder(templateFile, combinations)
 
 			if err != nil {
@@ -116,7 +115,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 
 			fmt.Println(combinedTemplate)
 
-			return err
+			return nil
 		},
 	}
 )

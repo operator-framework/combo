@@ -16,13 +16,11 @@ func TestFormatReplacements(t *testing.T) {
 		input map[string]string
 		want  map[string][]string
 	}{
-		// TEST FAILING
 		{
 			name:  "formats replacements correctly",
 			input: map[string]string{"TEST": "foo,bar,bap"},
 			want:  map[string][]string{"TEST": {"foo", "bar", "bap"}},
 		},
-		// YURRRRR
 		{
 			name:  "handles empty values",
 			input: map[string]string{"TEST": ""},
@@ -64,8 +62,8 @@ func TestValidateFile(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			//err := validateFile(tt.input)
-			//require.ErrorIs(t, err, tt.err)
+			err := validateFile(tt.input)
+			require.ErrorIs(t, err, tt.err)
 		})
 	}
 }
