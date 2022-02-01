@@ -35,25 +35,44 @@ var combinationTests = []struct {
 			err:          nil,
 		},
 	},
+	{
+		name:  "standard set of long args",
+		input: testdata.LongCombinationInput,
+		expected: expected{
+			combinations: testdata.LongCombinationOutput,
+			err:          nil,
+		},
+	},
 }
 
-func TestAll(t *testing.T) {
+func TestNext(t *testing.T) {
 	for _, tt := range combinationTests {
 		t.Run(tt.name, func(t *testing.T) {
 			combinationStream := NewStream(
 				WithArgs(tt.input),
-				WithSolveAhead(),
 			)
-			got, err := combinationStream.All()
-			if !errors.Is(err, tt.expected.err) {
-				t.Fatal("error received while retreiving all combinations:", err)
+
+			var got []map[string]string
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			for {
+				next, err := combinationStream.Next(ctx)
+				if !errors.Is(err, tt.expected.err) {
+					t.Fatal("error received while processing combination stream:", err)
+				}
+
+				if next == nil {
+					break
+				}
+
+				got = append(got, next)
 			}
-			require.ElementsMatch(t, got, tt.expected.combinations, "Combos generated incorrectly")
+			require.ElementsMatch(t, got, tt.expected.combinations, "combos generated incorrectly")
 		})
 	}
-}
 
-func TestNext(t *testing.T) {
 	for _, tt := range combinationTests {
 		t.Run(tt.name, func(t *testing.T) {
 			combinationStream := NewStream(
@@ -78,7 +97,7 @@ func TestNext(t *testing.T) {
 
 				got = append(got, next)
 			}
-			require.ElementsMatch(t, got, tt.expected.combinations, "Combos generated incorrectly")
+			require.ElementsMatch(t, got, tt.expected.combinations, "combos generated incorrectly")
 		})
 	}
 }

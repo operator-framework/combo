@@ -23,6 +23,8 @@ var (
 
 func init() {
 	evalCmd.Flags().StringToStringP("replacements", "r", map[string]string{}, "Key value pair of comma delimited values. Example: 'NAMESPACE=foo,bar'")
+	evalCmd.Flags().Bool("presolve", false, "Toggles how combinations are generated. When applied combinations are generated all at once.")
+
 	if err := evalCmd.MarkFlagRequired("replacements"); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize eval: %v", err)
 		os.Exit(1)
@@ -74,18 +76,19 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				return fmt.Errorf("failed to access replacements flag: %w", err)
 			}
 
+			useSolvedAhead, err := cmd.Flags().GetBool("presolve")
+			if err != nil {
+				return err
+			}
+
 			templateFile, err := os.Open(args[FilePathArgsIndex])
 			if err != nil {
 				return fmt.Errorf("failed to read file specified: %w", err)
 			}
 
-			if err := validateFile(templateFile); err != nil {
-				return fmt.Errorf("failed to validate file specified: %w", err)
-			}
-
 			combinations := combination.NewStream(
 				combination.WithArgs(formatReplacements(replacements)),
-				combination.WithSolveAhead(),
+				combination.WithSolveAhead(useSolvedAhead),
 			)
 
 			templateBuilder, err := template.NewBuilder(templateFile, combinations)
