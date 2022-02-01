@@ -1,0 +1,24 @@
+# permissions for end users to edit combinations.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: combination-editor-role
+rules:
+- apiGroups:
+  - combo.io
+  resources:
+  - combinations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - combo.io
+  resources:
+  - combinations/status
+  verbs:
+  - get

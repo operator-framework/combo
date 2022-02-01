@@ -1,0 +1,260 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "combo.io/v1alpha1",
+          "kind": "Combination",
+          "metadata": {
+            "name": "combination-sample"
+          },
+          "spec": {
+            "arguments": [
+              {
+                "key": "TARGET_GROUP",
+                "values": [
+                  "sre",
+                  "system:serviceaccounts:ci"
+                ]
+              },
+              {
+                "key": "TARGET_NAMESPACE",
+                "values": [
+                  "staging",
+                  "prod"
+                ]
+              }
+            ],
+            "template": "template-sample"
+          }
+        },
+        {
+          "apiVersion": "combo.io/v1alpha1",
+          "kind": "Template",
+          "metadata": {
+            "name": "template-sample"
+          },
+          "spec": {
+            "body": "---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: feature-controller\n  namespace: TARGET_NAMESPACE\nsubjects:\n- kind: ServiceAccount\n  name: controller\n  namespace: feature\nroleRef:\n  kind: ClusterRole\n  name: feature-controller\n  apiGroup: rbac.authorization.k8s.io\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  generateName: feature-user-\n  namespace: TARGET_NAMESPACE\nsubjects:\n- kind: Group\n  name: TARGET_GROUP\n  namespace: TARGET_NAMESPACE\n  apiGroup: rbac.authorization.k8s.io\nroleRef:\n  kind: ClusterRole\n  name: feature-user\n  apiGroup: rbac.authorization.k8s.io\n",
+            "parameters": [
+              "TARGET_GROUP",
+              "TARGET_NAMESPACE"
+            ]
+          }
+        }
+      ]
+    capabilities: Basic Install
+    operators.operatorframework.io/builder: operator-sdk-v1.16.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: combo.v0.0.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - kind: Combination
+      name: combinations.combo.io
+      version: v1alpha1
+    - kind: Template
+      name: templates.combo.io
+      version: v1alpha1
+  description: For generating the combination of kubernetes manifests on cluster
+  displayName: combo
+  icon:
+  - base64data: ""
+    mediatype: ""
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - combo.io
+          resources:
+          - combinations
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - combo.io
+          resources:
+          - combinations/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - combo.io
+          resources:
+          - combinations/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - combo.io
+          resources:
+          - templates
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - combo.io
+          resources:
+          - templates/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - combo.io
+          resources:
+          - templates/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        serviceAccountName: combo-controller-manager
+      deployments:
+      - name: combo-controller-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                control-plane: controller-manager
+            spec:
+              containers:
+              - args:
+                - --secure-listen-address=0.0.0.0:8443
+                - --upstream=http://127.0.0.1:8080/
+                - --logtostderr=true
+                - --v=10
+                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+                name: kube-rbac-proxy
+                ports:
+                - containerPort: 8443
+                  name: https
+                  protocol: TCP
+                resources: {}
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                image: controller:latest
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 500m
+                    memory: 128Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: combo-controller-manager
+              terminationGracePeriodSeconds: 10
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: combo-controller-manager
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - combo
+  - combinations
+  - templating
+  links:
+  - name: Combo
+    url: https://combo.domain
+  maintainers:
+  - email: tyslaton@redhat.com
+    name: Tyler Slaton
+  - email: tflannag@redhat.com
+    name: Tim Flannagan
+  - email: njhale@redhat.com
+    name: Nick Hale
+  maturity: alpha
+  provider:
+    name: operator-lifecycle-manager
+  version: 0.0.1

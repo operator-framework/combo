@@ -1,0 +1,60 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - combo.io
+  resources:
+  - combinations
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - combo.io
+  resources:
+  - combinations/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - combo.io
+  resources:
+  - combinations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - combo.io
+  resources:
+  - templates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - combo.io
+  resources:
+  - templates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - combo.io
+  resources:
+  - templates/status
+  verbs:
+  - get
+  - patch
+  - update

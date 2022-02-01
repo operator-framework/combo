@@ -60,7 +60,7 @@ var _ = BeforeSuite(func() {
 
 	Eventually(func() (int, error) {
 		deployment := appsv1.Deployment{}
-		err = kubeclient.Get(ctx, types.NamespacedName{Name: "combo-operator", Namespace: "combo"}, &deployment)
+		err = kubeclient.Get(ctx, types.NamespacedName{Name: "combo-controller-manager", Namespace: "combo-system"}, &deployment)
 
 		return int(deployment.Status.AvailableReplicas), err
 	}).Should(Equal(1), "failed to validate if the combo-operator is running")

@@ -1,0 +1,28 @@
+domain: combo.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: combo
+repo: github.com/operator-framework/combo
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: combo.io
+  group: combo
+  kind: Combination
+  path: github.com/operator-framework/combo/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: combo.io
+  group: combo
+  kind: Template
+  path: github.com/operator-framework/combo/api/v1alpha1
+  version: v1alpha1
+version: "3"
