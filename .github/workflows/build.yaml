@@ -2,10 +2,8 @@ name: build
 on:
   push:
     branches:
-      - main
+    - main
   pull_request:
-    paths-ignore:
-    - '**/*.md'
   workflow_dispatch:
 jobs:
   build:
