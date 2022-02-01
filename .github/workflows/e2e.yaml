@@ -1,12 +1,10 @@
 name: e2e
 on:
-  pull_request:
-    paths-ignore:
-    - '**/*.md'
-  workflow_dispatch:
   push:
     branches:
     - main
+  pull_request:
+  workflow_dispatch:
 jobs:
   kind:
     runs-on: ubuntu-latest
