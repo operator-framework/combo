@@ -5,6 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/yaml"
+
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/combo/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -154,6 +158,53 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 		Reason:  v1alpha1.ReasonProcessed,
 		Message: "evaluations successfully processed",
 	}), updater.EnsureEvaluations(generatedManifests))
+
+	// If manifest application is indicated, create generated manifests on-cluster.
+	if combination.Spec.Apply {
+		// update status to indicate processing
+		combination.SetStatusCondition(metav1.Condition{
+			Type:               v1alpha1.TypeInProgress,
+			Status:             metav1.ConditionTrue,
+			Reason:             v1alpha1.ReasonProcessing,
+			LastTransitionTime: metav1.NewTime(time.Now()),
+			Message:            "application of evaluations to the cluster in progress",
+		})
+
+		for _, manifest := range generatedManifests {
+			dec := yaml.NewYAMLOrJSONDecoder(strings.NewReader(manifest), 10)
+			obj := &unstructured.Unstructured{}
+			err := dec.Decode(obj)
+			if err != nil {
+				combination.SetStatusCondition(metav1.Condition{
+					Type:               v1alpha1.TypeInvalid,
+					Status:             metav1.ConditionFalse,
+					Reason:             v1alpha1.ReasonApplyFailed,
+					LastTransitionTime: metav1.NewTime(time.Now()),
+					Message:            fmt.Sprintf("failed to decode manifest %s to apply to cluster: %s", obj.GetName(), err.Error()),
+				})
+				return reconcile.Result{}, errors.NewAggregate([]error{err, c.Status().Update(ctx, combination)})
+			}
+			err = c.Create(ctx, obj)
+			if err != nil && !k8serrors.IsAlreadyExists(err) {
+				combination.SetStatusCondition(metav1.Condition{
+					Type:               v1alpha1.TypeInvalid,
+					Status:             metav1.ConditionFalse,
+					Reason:             v1alpha1.ReasonApplyFailed,
+					LastTransitionTime: metav1.NewTime(time.Now()),
+					Message:            fmt.Sprintf("failed to apply manifest %s to cluster: %s", obj.GetName(), err.Error()),
+				})
+				return reconcile.Result{}, errors.NewAggregate([]error{err, c.Status().Update(ctx, combination)})
+			}
+		}
+		// update status once all manifests have been applied
+		combination.SetStatusCondition(metav1.Condition{
+			Type:               v1alpha1.TypeFinished,
+			Status:             metav1.ConditionTrue,
+			Reason:             v1alpha1.ReasonApplySucceeded,
+			LastTransitionTime: metav1.NewTime(time.Now()),
+			Message:            "applied all evaluations to the cluster",
+		})
+	}
 
 	// Return and update the combination's status
 	return reconcile.Result{}, err

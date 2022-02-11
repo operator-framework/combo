@@ -27,6 +27,8 @@ const (
 	ReasonTemplateBodyInvalid = "TemplateBodyInvalid"
 	ReasonEvaluationsInvalid  = "EvaluationsInvalid"
 	ReasonProcessed           = "Processed"
+	ReasonApplyFailed         = "ApplyFailed"
+	ReasonApplySucceeded      = "ApplySucceeded"
 )
 
 // CombinationSpec defines arguments that replace parameters within the given template
@@ -38,6 +40,9 @@ type CombinationSpec struct {
 	// Arguments contains the list of values to use for each parameter in the combination.
 	// +kubebuilder:validation:MinItems:=1
 	Arguments []Argument `json:"arguments,omitempty"`
+
+	// Apply determines whether to apply the finished evaluations to the cluster.
+	Apply bool `json:"apply,omitempty"`
 }
 
 // Argument defines a key and values for it that will be replaced in a template

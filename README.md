@@ -93,7 +93,7 @@ Next, go ahead and run the `eval` subcommand.
 
 ```shell
 make build-cli
-./combo eval -r PARAM_1=a,b -r PARAM_2=c,d,e sample_input.yaml
+./bin/combo eval -r PARAM_1=a,b -r PARAM_2=c,d,e sample_input.yaml
 ```
 
 This will run the same logic that the controller utilizes to generate combinations and output them to stdout. The above command will produce the following:

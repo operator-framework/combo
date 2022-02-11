@@ -6,6 +6,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/operator-framework/combo/api/v1alpha1"
+
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -217,5 +219,198 @@ var _ = Describe("Combination controller", func() {
 				return conditionReasons, err
 			}).Should(ContainElement(v1alpha1.ReasonTemplateNotFound))
 		})
+	})
+
+	rawConfigMap :=
+		`
+---
+apiVersion: v1
+data: 
+  key: VALUE
+kind: ConfigMap
+metadata: 
+  name: cm
+  namespace: default
+`
+
+	configMapTemplate := v1alpha1.Template{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "cm-template",
+		},
+		Spec: v1alpha1.TemplateSpec{
+			Body:       rawConfigMap,
+			Parameters: []string{"VALUE"},
+		},
+	}
+
+	configMapCombo := v1alpha1.Combination{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "cm-combination",
+		},
+		Spec: v1alpha1.CombinationSpec{
+			Arguments: []v1alpha1.Argument{
+				{
+					Key: "VALUE",
+					Values: []string{
+						"mango",
+						"fox",
+					},
+				},
+			},
+			Apply: true,
+		},
+	}
+
+	When("given a configmap template with a combination that has apply set", func() {
+		var ctx context.Context
+
+		BeforeEach(func() {
+			ctx = context.Background()
+
+			err := kubeclient.Create(ctx, &configMapTemplate)
+			Expect(err).To(BeNil(), "failed to create template CR")
+
+			configMapCombo.Spec.Template = configMapTemplate.Name
+			err = kubeclient.Create(ctx, &configMapCombo)
+			Expect(err).To(BeNil(), "failed to create combo CR")
+		})
+
+		AfterEach(func() {
+			err := kubeclient.Delete(ctx, &configMapTemplate)
+			Expect(err).To(BeNil(), "failed to cleanup template CR")
+
+			err = kubeclient.Delete(ctx, &configMapCombo)
+			Expect(err).To(BeNil(), "failed to cleanup combo CR")
+		})
+
+		It("should fail to create the resource on-cluster due to missing RBAC", func() {
+			Eventually(func(g Gomega) error {
+				var retrievedCombination v1alpha1.Combination
+				err := kubeclient.Get(ctx, types.NamespacedName{Name: configMapCombo.Name}, &retrievedCombination)
+
+				var conditionReasons []string
+				for _, condition := range retrievedCombination.Status.Conditions {
+					conditionReasons = append(conditionReasons, condition.Reason)
+				}
+				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonProcessed))
+				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonApplyFailed))
+
+				var conditionMessages []string
+				for _, condition := range retrievedCombination.Status.Conditions {
+					conditionMessages = append(conditionMessages, condition.Message)
+				}
+				g.Expect(conditionMessages).To(ContainElement("failed to apply manifest cm to cluster: configmaps is forbidden: User \"system:serviceaccount:combo:combo-operator\" cannot create resource \"configmaps\" in API group \"\" in the namespace \"default\""))
+
+				return err
+			}).Should(Succeed())
+		})
+	})
+
+	rawTemplate :=
+		`
+--- 
+apiVersion: combo.io/v1alpha1
+kind: Template
+metadata: 
+  labels: 
+    environment: VALUE
+  name: embedded-template-VALUE
+spec: 
+  body: |
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata:
+        name: feature-controller
+        namespace: TARGET_NAMESPACE
+  parameters: 
+    - TARGET_NAMESPACE
+`
+
+	embeddedTemplate := v1alpha1.Template{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "em-template",
+		},
+		Spec: v1alpha1.TemplateSpec{
+			Body:       rawTemplate,
+			Parameters: []string{"VALUE"},
+		},
+	}
+
+	embeddedCombo := v1alpha1.Combination{
+		ObjectMeta: metav1.ObjectMeta{
+			GenerateName: "em-combination",
+		},
+		Spec: v1alpha1.CombinationSpec{
+			Arguments: []v1alpha1.Argument{
+				{
+					Key: "VALUE",
+					Values: []string{
+						"dev",
+						"prod",
+					},
+				},
+			},
+			Apply: true,
+		},
+	}
+
+	// This test ensures that when combo has permissions to create objects in a certain API group, it can do so successfully.
+	// Since by default combo only has permissions for its own APIs, this test uses a Template type in the template body
+	// so there are adequate permissions to create the resource on-cluster.
+	When("given a template with another template embedded in it that has apply set", func() {
+		var ctx context.Context
+
+		BeforeEach(func() {
+			ctx = context.Background()
+
+			// before creation, modify the combo operator cluster role to allow for the creation of objects in the combo API group
+			// this simulates the cluster-admin modifying the permissions granted to combo before applying resources.
+			var cr rbacv1.ClusterRole
+			err := kubeclient.Get(ctx, types.NamespacedName{Name: "combo-operator"}, &cr)
+			Expect(err).To(BeNil(), "failed to get combo clusterrole")
+			cr.Rules[0].Verbs = append(cr.Rules[0].Verbs, "create")
+			err = kubeclient.Update(ctx, &cr)
+			Expect(err).To(BeNil(), "failed to update combo clusterrole")
+
+			err = kubeclient.Create(ctx, &embeddedTemplate)
+			Expect(err).To(BeNil(), "failed to create template CR")
+
+			embeddedCombo.Spec.Template = embeddedTemplate.Name
+			err = kubeclient.Create(ctx, &embeddedCombo)
+			Expect(err).To(BeNil(), "failed to create combo CR")
+		})
+
+		AfterEach(func() {
+			err := kubeclient.Delete(ctx, &embeddedTemplate)
+			Expect(err).To(BeNil(), "failed to cleanup template CR")
+
+			err = kubeclient.Delete(ctx, &embeddedCombo)
+			Expect(err).To(BeNil(), "failed to cleanup combo CR")
+		})
+
+		It("should successfully create the templated evaluation on-cluster", func() {
+			Eventually(func(g Gomega) error {
+				var retrievedCombination v1alpha1.Combination
+				err := kubeclient.Get(ctx, types.NamespacedName{Name: embeddedCombo.Name}, &retrievedCombination)
+				Expect(err).To(BeNil(), "failed to get combo CR")
+
+				var conditionReasons []string
+				for _, condition := range retrievedCombination.Status.Conditions {
+					conditionReasons = append(conditionReasons, condition.Reason)
+				}
+				g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonProcessed))
+				// g.Expect(conditionReasons).To(ContainElement(v1alpha1.ReasonApplySucceeded))
+
+				// fetch created template on-cluster and ensure templating worked as expected
+				var embeddedTemplate v1alpha1.Template
+				err = kubeclient.Get(ctx, types.NamespacedName{Name: "embedded-template-dev"}, &embeddedTemplate)
+
+				g.Expect(embeddedTemplate.GetLabels()["environment"]).To(Equal("dev"))
+
+				return err
+			}).Should(Succeed())
+		})
+
 	})
 })
