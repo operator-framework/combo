@@ -9,7 +9,7 @@ metadata:
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions: {}
-  description: For generating the combination of kubernetes manifests on cluster
+  description: For generating combinations of kubernetes manifest templates on cluster
   displayName: combo
   icon:
   - base64data: ""
