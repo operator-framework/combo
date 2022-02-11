@@ -91,8 +91,20 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
+.PHONY: tidy
+tidy: ## Run go mod tidy
+	go mod tidy
+
+.PHONY: lint
+lint: ## Run golangci-lint
+	$(Q)go run github.com/golangci/golangci-lint/cmd/golangci-lint run
+
+.PHONY: verify
+verify: fmt tidy manifests generate lint ## Verify the current code generation and lint
+	git diff --exit-code
+
 .PHONY: test
-test: manifests generate fmt vet test-unit test-e2e ## Run tests.
+test: verify test-unit test-e2e ## Run tests.
 
 UNIT_TEST_DIRS=$(shell go list ./... | grep -v /test/)
 test-unit: ## Run the unit tests
