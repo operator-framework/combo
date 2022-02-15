@@ -1,0 +1,5 @@
+## Append samples you want in your CSV to this file as resources ##
+resources:
+- combo_v1alpha1_combination.yaml
+- combo_v1alpha1_template.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

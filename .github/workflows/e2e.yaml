@@ -1,10 +1,12 @@
 name: e2e
 on:
+  pull_request:
+    paths-ignore:
+    - '**/*.md'
+  workflow_dispatch:
   push:
     branches:
     - main
-  pull_request:
-  workflow_dispatch:
 jobs:
   kind:
     runs-on: ubuntu-latest
@@ -27,4 +29,6 @@ jobs:
         kind create cluster
         kind export kubeconfig
     - name: Run e2e tests
-      run: make run-e2e
+      run: |
+        make deploy
+        make test-e2e

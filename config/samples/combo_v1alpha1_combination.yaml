@@ -1,0 +1,15 @@
+apiVersion: combo.io/v1alpha1
+kind: Combination
+metadata:
+  name: combination-sample
+spec:
+  template: template-sample
+  arguments:
+  - key: TARGET_GROUP
+    values:
+    - "sre"
+    - "system:serviceaccounts:ci"
+  - key: TARGET_NAMESPACE
+    values:
+    - staging
+    - prod

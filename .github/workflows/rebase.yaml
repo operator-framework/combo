@@ -2,7 +2,7 @@ name: rebase pull request
 on:
   push:
     branches:
-    - main
+    - "main"
 jobs:
   rebase:
     runs-on: ubuntu-latest

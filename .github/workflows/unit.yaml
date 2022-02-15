@@ -2,8 +2,10 @@ name: unit
 on:
   push:
     branches:
-    - main
+      - main
   pull_request:
+    paths-ignore:
+    - '**/*.md'
   workflow_dispatch:
 jobs:
   unit:
@@ -16,5 +18,4 @@ jobs:
         with:
           go-version: '1.17'
       - name: Run unit tests
-        run: |
-          make test-unit
+        run: make test-unit
