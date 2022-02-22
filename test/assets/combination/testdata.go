@@ -1,5 +1,18 @@
 package testdata
 
+var OneParameterCombinationInput = map[string][]string{
+	"TEST1": {"foo", "bar"},
+}
+
+var OneParameterCombinationOutput = []map[string]string{
+	{
+		"TEST1": "foo",
+	},
+	{
+		"TEST1": "bar",
+	},
+}
+
 var CombinationInput = map[string][]string{
 	"TEST1": {"foo", "bar"},
 	"TEST2": {"zip", "zap"},

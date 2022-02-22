@@ -86,6 +86,17 @@ func (cs *stream) nextIterativeCombination() (map[string]string, error) {
 	// comboList is a variable that holds a list of combinations to be returned.
 	comboList := map[string]string{}
 
+	// Edge case: 1 parameter
+	if len(cs.parameterListFromArgs) == 1 {
+		key := cs.parameterListFromArgs[0]
+		comboList[key] = cs.args[cs.parameterListFromArgs[0]][cs.positionsMapInArgs[0]]
+		cs.positionsMapInArgs[0]++
+		if cs.positionsMapInArgs[0] == len(cs.args[cs.parameterListFromArgs[0]]) {
+			cs.solved = true
+		}
+		return comboList, nil
+	}
+
 	// Generate the list of combinations based off current positions
 	for x := 0; x < len(cs.parameterListFromArgs); x++ {
 		combo := cs.args[cs.parameterListFromArgs[x]][cs.positionsMapInArgs[x]]

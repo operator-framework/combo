@@ -28,6 +28,14 @@ var combinationTests = []struct {
 		},
 	},
 	{
+		name:  "standard set of one parameter args",
+		input: testdata.OneParameterCombinationInput,
+		expected: expected{
+			combinations: testdata.OneParameterCombinationOutput,
+			err:          nil,
+		},
+	},
+	{
 		name:  "standard set of args",
 		input: testdata.CombinationInput,
 		expected: expected{
