@@ -26,8 +26,8 @@ type stream struct {
 	args                  map[string][]string // the raw data from the stream
 	solveAhead            bool                // if true the Next() function will solve combinations all at once using nextPreSolvedCombination()
 	solved                bool
-	parameterListFromArgs []string // a list of the names of the parameters taken from the stream(args).
-	positionsMapInArgs    []int    // array of integers that tracks the position of the next combination within args.
+	combinationParameters []string // a list of the names of the parameters taken from the stream(args).
+	positionTree          []int    // array of integers that tracks the position of the next combination within args.
 	nextParameterToUpdate int      // an integer that represents the parameter we are currently looking at. Intializes as second to last value in parameters.
 }
 
@@ -40,10 +40,10 @@ func NewStream(options ...StreamOption) Stream {
 		option(cs)
 	}
 	for key := range cs.args {
-		cs.parameterListFromArgs = append(cs.parameterListFromArgs, key)
-		cs.positionsMapInArgs = append(cs.positionsMapInArgs, 0)
+		cs.combinationParameters = append(cs.combinationParameters, key)
+		cs.positionTree = append(cs.positionTree, 0)
 	}
-	cs.nextParameterToUpdate = len(cs.parameterListFromArgs) - 2 // Intializes nextParameterToUpdate to point to the second to last element in parameterList...
+	cs.nextParameterToUpdate = len(cs.combinationParameters) - 2 // Intializes nextParameterToUpdate to point to the second to last element in parameterList...
 	return cs
 }
 
@@ -68,52 +68,19 @@ func WithSolveAhead(boolVar ...bool) StreamOption {
 	}
 }
 
-// nextIterativeCombination() gets the next combination from the stream.
-// By using this, the stream will solve each combination
-// iteratively.
-func (cs *stream) nextIterativeCombination() (map[string]string, error) {
-	if cs.solved {
-		return nil, nil
-	}
-	// Check to see if anymore combinations exist
-
-	// Edge case: No parameterListFromArgs
-	if len(cs.parameterListFromArgs) == 0 {
-		cs.solved = true
-		return nil, ErrNoArgsSet
-	}
-
-	// comboList is a variable that holds a list of combinations to be returned.
-	comboList := map[string]string{}
-
-	// Edge case: 1 parameter
-	if len(cs.parameterListFromArgs) == 1 {
-		key := cs.parameterListFromArgs[0]
-		comboList[key] = cs.args[cs.parameterListFromArgs[0]][cs.positionsMapInArgs[0]]
-		cs.positionsMapInArgs[0]++
-		if cs.positionsMapInArgs[0] == len(cs.args[cs.parameterListFromArgs[0]]) {
-			cs.solved = true
-		}
-		return comboList, nil
-	}
-
-	// Generate the list of combinations based off current positions
-	for x := 0; x < len(cs.parameterListFromArgs); x++ {
-		combo := cs.args[cs.parameterListFromArgs[x]][cs.positionsMapInArgs[x]]
-		key := cs.parameterListFromArgs[x]
-		comboList[key] = combo
-	}
-
+// updateParameterPositionsList() is a method that iterates cs.positionTree
+// as well as cs.nextParameterToUpdate to be updated to the next parameter/combination in the tree
+func (cs *stream) updateParameterPositionsList() {
 	// Iterates through position map in reverse
 	// looking for the first updatable value then breaks loop.
 	// Otherwise, resets values to zero, we know to update last parameter based off i.
 	var i int
-	for i = len(cs.positionsMapInArgs) - 1; i > cs.nextParameterToUpdate; i-- {
-		if cs.positionsMapInArgs[i]+1 < len(cs.args[cs.parameterListFromArgs[i]]) {
-			cs.positionsMapInArgs[i]++
+	for i = len(cs.positionTree) - 1; i > cs.nextParameterToUpdate; i-- {
+		if cs.positionTree[i]+1 < len(cs.args[cs.combinationParameters[i]]) {
+			cs.positionTree[i]++
 			break
 		}
-		cs.positionsMapInArgs[i] = 0
+		cs.positionTree[i] = 0
 	}
 
 	// Checks to see if we need to update lastParameter based
@@ -121,8 +88,8 @@ func (cs *stream) nextIterativeCombination() (map[string]string, error) {
 	if i == cs.nextParameterToUpdate {
 		// Checks to see if this is the last argument of the parameter.
 		// Then updates parameter, and checks to see if the combination is solved.
-		if cs.positionsMapInArgs[cs.nextParameterToUpdate]+1 == len(cs.args[cs.parameterListFromArgs[cs.nextParameterToUpdate]]) {
-			cs.positionsMapInArgs[cs.nextParameterToUpdate] = 0
+		if cs.positionTree[cs.nextParameterToUpdate]+1 == len(cs.args[cs.combinationParameters[cs.nextParameterToUpdate]]) {
+			cs.positionTree[cs.nextParameterToUpdate] = 0
 			cs.nextParameterToUpdate--
 		}
 		// If combination is not solved, we find the next nextParameterToUpdate,
@@ -130,18 +97,61 @@ func (cs *stream) nextIterativeCombination() (map[string]string, error) {
 		// if reach end up parameters.
 		continueIterating := true
 		for !cs.solved && continueIterating && cs.nextParameterToUpdate != -1 {
-			if len(cs.args[cs.parameterListFromArgs[cs.nextParameterToUpdate]]) == 1 {
+			if len(cs.args[cs.combinationParameters[cs.nextParameterToUpdate]]) == 1 {
 				cs.nextParameterToUpdate--
 				continue
 			}
 			continueIterating = false
-			cs.positionsMapInArgs[cs.nextParameterToUpdate]++
+			cs.positionTree[cs.nextParameterToUpdate]++
 		}
 	}
+}
+
+// checkSolved() accesses whether or not a combination stream is solved,
+// if so it updates cs.solved variable to be true
+func (cs *stream) checkSolved() {
 	if cs.nextParameterToUpdate == -1 {
 		cs.solved = true
 	}
-	return comboList, nil
+}
+
+// nextIterativeCombination() gets the next combination from the stream.
+// By using this, the stream will solve each combination
+// iteratively.
+func (cs *stream) nextIterativeCombination() (map[string]string, error) {
+	if cs.solved {
+		return nil, nil
+	}
+
+	// Edge case: 0 parameters
+	if len(cs.combinationParameters) == 0 {
+		cs.solved = true
+		return nil, ErrNoArgsSet
+	}
+
+	// Edge case: 1 parameter
+	if len(cs.combinationParameters) == 1 {
+		comboList := map[string]string{}
+		key := cs.combinationParameters[0]
+		comboList[key] = cs.args[cs.combinationParameters[0]][cs.positionTree[0]]
+		cs.positionTree[0]++
+		if cs.positionTree[0] == len(cs.args[cs.combinationParameters[0]]) {
+			cs.solved = true
+		}
+		return comboList, nil
+	}
+
+	// Generate a list of combinations from the positionTree
+	combinationList := map[string]string{}
+	for x := 0; x < len(cs.combinationParameters); x++ {
+		combination := cs.args[cs.combinationParameters[x]][cs.positionTree[x]]
+		parameter := cs.combinationParameters[x]
+		combinationList[parameter] = combination
+	}
+
+	cs.updateParameterPositionsList()
+	cs.checkSolved()
+	return combinationList, nil
 }
 
 // nextPreSolvedCombination() generates all combinations at once.
