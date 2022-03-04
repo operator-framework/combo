@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/combo/api/v1alpha1"
@@ -110,11 +109,10 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	template := &v1alpha1.Template{}
 	if err := c.Get(ctx, types.NamespacedName{Name: combination.Spec.Template}, template); err != nil {
 		u.UpdateStatus(updater.EnsureCondition(metav1.Condition{
-			Type:               v1alpha1.TypeInvalid,
-			Status:             metav1.ConditionTrue,
-			Reason:             v1alpha1.ReasonTemplateNotFound,
-			LastTransitionTime: metav1.NewTime(time.Now()),
-			Message:            fmt.Sprintf("failed to retrieve %s template: %s", combination.Spec.Template, err.Error()),
+			Type:    v1alpha1.TypeInvalid,
+			Status:  metav1.ConditionTrue,
+			Reason:  v1alpha1.ReasonTemplateNotFound,
+			Message: fmt.Sprintf("failed to retrieve %s template: %s", combination.Spec.Template, err.Error()),
 		}))
 		return reconcile.Result{}, err
 	}
@@ -129,11 +127,10 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	builder, err := templatePkg.NewBuilder(strings.NewReader(template.Spec.Body), comboStream)
 	if err != nil {
 		u.UpdateStatus(updater.EnsureCondition(metav1.Condition{
-			Type:               v1alpha1.TypeInvalid,
-			Status:             metav1.ConditionTrue,
-			Reason:             v1alpha1.ReasonTemplateBodyInvalid,
-			LastTransitionTime: metav1.NewTime(time.Now()),
-			Message:            fmt.Sprintf("failed to construct a builder out of %s template body:  %s", combination.Spec.Template, err.Error()),
+			Type:    v1alpha1.TypeInvalid,
+			Status:  metav1.ConditionTrue,
+			Reason:  v1alpha1.ReasonTemplateBodyInvalid,
+			Message: fmt.Sprintf("failed to construct a builder out of %s template body:  %s", combination.Spec.Template, err.Error()),
 		}))
 		return reconcile.Result{}, err
 	}
@@ -142,22 +139,20 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	generatedManifests, err := builder.Build(ctx)
 	if err != nil {
 		u.UpdateStatus(updater.EnsureCondition(metav1.Condition{
-			Type:               v1alpha1.TypeInvalid,
-			Status:             metav1.ConditionTrue,
-			Reason:             v1alpha1.ReasonEvaluationsInvalid,
-			LastTransitionTime: metav1.NewTime(time.Now()),
-			Message:            fmt.Sprintf("failed to generate manifest %s combinations: %s", combination.Spec.Template, err.Error()),
+			Type:    v1alpha1.TypeInvalid,
+			Status:  metav1.ConditionTrue,
+			Reason:  v1alpha1.ReasonEvaluationsInvalid,
+			Message: fmt.Sprintf("failed to generate manifest %s combinations: %s", combination.Spec.Template, err.Error()),
 		}))
 		return reconcile.Result{}, err
 	}
 
 	// Add the combination evaluations and update Status
 	u.UpdateStatus(updater.EnsureCondition(metav1.Condition{
-		Type:               v1alpha1.TypeFinished,
-		Status:             metav1.ConditionTrue,
-		Reason:             v1alpha1.ReasonProcessed,
-		LastTransitionTime: metav1.NewTime(time.Now()),
-		Message:            "evaluations successfully processed",
+		Type:    v1alpha1.TypeFinished,
+		Status:  metav1.ConditionTrue,
+		Reason:  v1alpha1.ReasonProcessed,
+		Message: "evaluations successfully processed",
 	}), updater.EnsureEvaluations(generatedManifests))
 
 	// Return and update the combination's status
