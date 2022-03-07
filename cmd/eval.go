@@ -62,9 +62,20 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				return err
 			}
 
-			templateFile, err := os.Open(args[FilePathArgsIndex])
+			// Determine if input is from pipe or designated input file
+			fi, err := os.Stdin.Stat()
 			if err != nil {
-				return fmt.Errorf("failed to read file specified: %w", err)
+				return fmt.Errorf("error accessing STDIN")
+			}
+
+			var templateData *os.File
+			if fi.Mode()&os.ModeNamedPipe == 0 {
+				templateData, err = os.Open(args[FilePathArgsIndex])
+				if err != nil {
+					return fmt.Errorf("failed to read file specified: %w", err)
+				}
+			} else {
+				templateData = os.Stdin
 			}
 
 			combinations := combination.NewStream(
@@ -72,7 +83,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 				combination.WithSolveAhead(useSolvedAhead),
 			)
 
-			templateBuilder, err := template.NewBuilder(templateFile, combinations)
+			templateBuilder, err := template.NewBuilder(templateData, combinations)
 			if err != nil {
 				return fmt.Errorf("failed to construct builder: %w", err)
 			}
