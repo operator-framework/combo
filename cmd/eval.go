@@ -65,7 +65,7 @@ Example: combo eval -r REPLACE_ME=1,2,3 path/to/file
 			// Determine if input is from pipe or designated input file
 			fi, err := os.Stdin.Stat()
 			if err != nil {
-				return fmt.Errorf("error accessing STDIN")
+				return fmt.Errorf("error accessing STDIN: %w", err)
 			}
 
 			var templateData *os.File
