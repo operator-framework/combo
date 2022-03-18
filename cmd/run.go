@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/operator-framework/combo/pkg/controller"
+	"github.com/operator-framework/combo/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,6 +47,7 @@ This will reconcile any events for the Combination and Template resources.
 			return err
 		}
 
+		rootLog.Info("Starting Combo", "combo version", version.ComboVersion, "git commit", version.GitCommit, "kubernetes version", version.KubernetesVersion)
 		return mgr.Start(signals.SetupSignalHandler())
 	},
 }
