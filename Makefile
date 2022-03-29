@@ -99,10 +99,10 @@ load-image: ## Load-image loads the currently constructed image onto the cluster
 	$(IMAGE_LOAD_COMMAND) $(IMAGE)
 
 deploy: generate ## Deploy the Combo operator to the current cluster
-	kubectl apply --recursive -f manifests
+	kubectl apply -f manifests
 
 teardown: ## Teardown the Combo operator to the current cluster
-	kubectl delete --recursive -f manifests
+	kubectl delete -f manifests
 
 run: build-container load-image deploy ## Run Combo on local cluster
 
