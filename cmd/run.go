@@ -8,6 +8,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
+func init() {
+	runCmd.Flags().Int("verbosity", 1, "Sets verbosity level of combo CR controller with default verbosity 1. Verbosity decreases as the value given increases.")
+}
+
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run Combo as a controller on the cluster",
@@ -25,9 +29,14 @@ This will reconcile any events for the Combination and Template resources.
 			return err
 		}
 
+		verbosityLevel, err := cmd.Flags().GetInt("verbosity")
+		if err != nil {
+			return err
+		}
+
 		c, err := controller.NewController(
 			mgr.GetClient(),
-			ctrl.Log.WithName("run"),
+			ctrl.Log.V(verbosityLevel).WithName("run"),
 		)
 		if err != nil {
 			return nil
