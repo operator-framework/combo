@@ -79,7 +79,7 @@ func (c *combinationController) Reconcile(ctx context.Context, req ctrl.Request)
 	// Set up a convenient log object so we don’t have to type request over and over again
 	log := c.log.WithValues("request", req)
 
-	log.V(1).Info("new combination event inbound")
+	log.Info("new combination event inbound")
 
 	// Attempt to retrieve the requested combination CR
 	combination := &v1alpha1.Combination{}
