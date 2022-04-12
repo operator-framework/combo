@@ -13,6 +13,11 @@ COPY pkg pkg
 COPY main.go main.go
 COPY Makefile Makefile
 
+# copy git-related information for binary version information
+COPY .git/refs .git/refs
+COPY .git/HEAD .git/HEAD
+COPY .git/objects .git/objects
+
 RUN make build-cli
 
 # Copy the binary over to a distroless image and run it
