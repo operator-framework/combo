@@ -11,7 +11,7 @@ PKGS := $(shell go list ./...)
 COMBO_VERSION :=  $(shell git describe --match 'v[0-9]*' --tags --always)
 
 # Binary build options
-KUBERNETES_VERSION=v0.22.2
+export KUBERNETES_VERSION=v0.22.2
 
 # Container build options
 IMAGE_REPO=quay.io/operator-framework/combo

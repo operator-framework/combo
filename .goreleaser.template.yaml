@@ -3,7 +3,6 @@ env:
 - GO111MODULE=on
 - CGO_ENABLED=0
 - PKG=github.com/operator-framework/combo/pkg/version
-- KUBERNETES_VERSION=v0.22.2
 before:
   hooks:
     - go mod tidy
