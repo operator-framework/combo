@@ -111,9 +111,9 @@ run-e2e: run test-e2e ## Run Combo and trigger the e2e tests for it
 
 run-e2e-local: run-local test-e2e ## Run Combo on local environment and trigger e2e tests for it using Dockerfile.local
 
-################
-# Hack / Tools #
-################
+##################
+# Release Targets#
+##################
 export DISABLE_RELEASE_PIPELINE ?= true
 substitute:
 	envsubst < .goreleaser.template.yml > .goreleaser.yml
