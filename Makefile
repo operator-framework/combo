@@ -14,8 +14,8 @@ COMBO_VERSION :=  $(shell git describe --match 'v[0-9]*' --tags --always)
 export KUBERNETES_VERSION=v0.22.2
 
 # Container build options
-IMAGE_REPO=quay.io/operator-framework/combo
-IMAGE_TAG=latest
+export IMAGE_REPO=quay.io/operator-framework/combo
+export IMAGE_TAG=latest
 IMAGE=$(IMAGE_REPO):$(IMAGE_TAG)
 
 # kernel-style V=1 build verbosity
