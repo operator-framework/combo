@@ -25,6 +25,11 @@ jobs:
       with:
         go-version: ~1.17
 
+    - name: Install GoReleaser
+      uses: goreleaser/goreleaser-action@v2
+      with:
+        install-only: true
+
     - name: Docker Login
       if: ${{ github.event_name != 'pull_request' }}
       uses: docker/login-action@v1
