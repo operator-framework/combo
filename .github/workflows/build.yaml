@@ -26,4 +26,4 @@ jobs:
           make build-container
       - name: Run the container
         run: |
-          docker run quay.io/operator-framework/combo:latest
+          docker run quay.io/operator-framework/combo-operator:latest

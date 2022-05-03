@@ -18,7 +18,7 @@ spec:
       serviceAccountName: combo-operator
       containers:
       - name: combo
-        image: quay.io/operator-framework/combo:latest
+        image: quay.io/operator-framework/combo-operator:latest
         imagePullPolicy: IfNotPresent
         command:
         - /bin/combo
