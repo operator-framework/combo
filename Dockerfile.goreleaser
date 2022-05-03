@@ -1,0 +1,10 @@
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/static:debug
+
+WORKDIR /
+
+# Copy goreleaser built binaries
+COPY combo /bin/combo
+
+EXPOSE 8080
+
+ENTRYPOINT ["/bin/combo"]

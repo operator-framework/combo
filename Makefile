@@ -11,11 +11,11 @@ PKGS := $(shell go list ./...)
 COMBO_VERSION :=  $(shell git describe --match 'v[0-9]*' --tags --always)
 
 # Binary build options
-KUBERNETES_VERSION=v0.22.2
+export KUBERNETES_VERSION=v0.22.2
 
 # Container build options
-IMAGE_REPO=quay.io/operator-framework/combo
-IMAGE_TAG=latest
+export IMAGE_REPO=quay.io/operator-framework/combo-operator
+export IMAGE_TAG=latest
 IMAGE=$(IMAGE_REPO):$(IMAGE_TAG)
 
 # kernel-style V=1 build verbosity
@@ -110,3 +110,15 @@ run-local: build-local-container load-image deploy ## Run Combo on local environ
 run-e2e: run test-e2e ## Run Combo and trigger the e2e tests for it
 
 run-e2e-local: run-local test-e2e ## Run Combo on local environment and trigger e2e tests for it using Dockerfile.local
+
+###################
+# Release Targets #
+###################
+export DISABLE_RELEASE_PIPELINE ?= true
+substitute:
+	envsubst < .goreleaser.template.yml > .goreleaser.yml
+
+release: GORELEASER ?= goreleaser
+release: GORELEASER_ARGS ?= --snapshot --rm-dist
+release: substitute
+	$(GORELEASER) $(GORELEASER_ARGS)

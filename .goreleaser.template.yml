@@ -1,0 +1,72 @@
+env:
+- GOPROXY=https://proxy.golang.org|direct
+- GO111MODULE=on
+- CGO_ENABLED=0
+- PKG=github.com/operator-framework/combo/pkg/version
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+builds:
+  - id: combo
+    binary: bin/combo
+    goos:
+      - linux
+    goarch:
+    - amd64
+    - arm64
+    - ppc64le
+    - s390x
+    ldflags:
+      -X {{ .Env.PKG }}.GitCommit={{ .ShortCommit }}
+      -X {{ .Env.PKG }}.ComboVersion={{ .Env.IMAGE_TAG }}
+      -X {{ .Env.PKG }}.KubernetesVersion={{ .Env.KUBERNETES_VERSION }}
+dockers:
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-amd64"
+  dockerfile: Dockerfile.goreleaser
+  use: buildx
+  goos: linux
+  goarch: amd64
+  build_flag_templates:
+  - --platform=linux/amd64
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-arm64"
+  dockerfile: Dockerfile.goreleaser
+  use: buildx
+  goos: linux
+  goarch: arm64
+  build_flag_templates:
+  - --platform=linux/arm64
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-ppc64le"
+  dockerfile: Dockerfile.goreleaser
+  use: buildx
+  goos: linux
+  goarch: ppc64le
+  build_flag_templates:
+  - --platform=linux/ppc64le
+- image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-s390x"
+  dockerfile: Dockerfile.goreleaser
+  use: buildx
+  goos: linux
+  goarch: s390x
+  build_flag_templates:
+  - --platform=linux/s390x
+docker_manifests:
+- name_template: "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}"
+  image_templates:
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-amd64"
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-arm64"
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-ppc64le"
+  - "{{ .Env.IMAGE_REPO }}:{{ .Env.IMAGE_TAG }}-s390x"
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+changelog:
+  use: github-native
+  skip: $DISABLE_RELEASE_PIPELINE
+release:
+  disable: $DISABLE_RELEASE_PIPELINE
