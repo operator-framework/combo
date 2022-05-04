@@ -18,6 +18,10 @@ export IMAGE_REPO=quay.io/operator-framework/combo-operator
 export IMAGE_TAG=latest
 IMAGE=$(IMAGE_REPO):$(IMAGE_TAG)
 
+export BUNDLE_REPO=quay.io/operator-framework/combo-bundle
+export BUNDLE_TAG=latest
+BUNDLE=$(BUNDLE_REPO):$(BUNDLE_TAG)
+
 # kernel-style V=1 build verbosity
 ifeq ("$(origin V)", "command line")
   BUILD_VERBOSE = $(V)
@@ -45,7 +49,7 @@ help: ## Show this help screen
 #################
 # Build Targets #
 #################
-.PHONY: tidy generate format lint verify build-cli build-container build-local-container
+.PHONY: tidy generate format lint verify build-cli build-container build-local-container build-bundle
 
 tidy: ## Update dependencies
 	$(Q)go mod tidy
@@ -74,6 +78,9 @@ build-local-container: BUILD_ARCH=amd64
 build-local-container: build-cli ## Build the Combo container from the Dockerfile.local to speed compile time up. Accepts IMAGE_REPO and IMAGE_TAG overrides.
 	docker build . -f Dockerfile.local -t $(IMAGE)
 
+build-bundle: ## Build the Combo bundle. Accepts BUNDLE_REPO and BUNDLE_TAG overrides.
+	docker build . -f Dockerfile.plainbundle -t $(BUNDLE)
+
 ################
 # Test Targets #
 ################
@@ -91,11 +98,14 @@ test-e2e: ## Run the e2e tests
 ###################
 # Running Targets #
 ###################
-.PHONY: load-image deploy teardown run run-local run-e2e run-e2e-local
+.PHONY: load-image load-bundle deploy teardown run run-local run-e2e run-e2e-local
 
 IMAGE_LOAD_COMMAND=kind load docker-image
 load-image: ## Load-image loads the currently constructed image onto the cluster
 	$(IMAGE_LOAD_COMMAND) $(IMAGE)
+
+load-bundle: ## Loads the currently constructed Combo bundle onto the cluster
+	$(IMAGE_LOAD_COMMAND) $(BUNDLE)
 
 deploy: generate ## Deploy the Combo operator to the current cluster
 	kubectl apply -f manifests
