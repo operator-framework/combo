@@ -76,7 +76,19 @@ $ make build-cli
 
 To build the docker container, run:
 ```bash
-$ make build-local-container
+$ make build-container
+```
+
+### Loading
+
+To load the controller, run:
+```bash
+$ make load-image
+```
+
+To load the bundle, run:
+```bash
+$ make load-image IMAGE=quay.io/operator-framework/combo-bundle
 ```
 
 ### Style

@@ -25,10 +25,11 @@ jobs:
         else
           echo BUNDLE_TAG="$(git describe --tags --always)" >> $GITHUB_ENV
         fi
+        echo BUNDLE="quay.io/operator-framework/combo-bundle:${BUNDLE_TAG}" >> $GITHUB_ENV
 
     - name: Build and push bundle
       uses: docker/build-push-action@v3
       with:
         file: Dockerfile.plainbundle
-        tags: ${{ env.BUNDLE_TAG }}
+        tags: ${{ env.BUNDLE }}
         github-token: ${{ github.token }}

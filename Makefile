@@ -49,7 +49,7 @@ help: ## Show this help screen
 #################
 # Build Targets #
 #################
-.PHONY: tidy generate format lint verify build-cli build-container build-local-container build-bundle
+.PHONY: tidy generate format lint verify build-cli build-container build-bundle
 
 tidy: ## Update dependencies
 	$(Q)go mod tidy
@@ -68,15 +68,12 @@ verify: tidy generate format lint ## Verify the current code generation and lint
 
 VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT) -X $(VERSION_PATH).ComboVersion=$(COMBO_VERSION) -X $(VERSION_PATH).KubernetesVersion=$(KUBERNETES_VERSION)"
 build-cli: ## Build the CLI binary. Specify VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version. You may also specify BUILD_OS and BUILD_ARCH to change the build's binary. 
-	$(Q) CGO_ENABLED=0 GOOS=$(BUILD_OS) GOARCH=$(BUILD_ARCH) go build $(VERSION_FLAGS) -o ./bin/combo
+	$(Q) CGO_ENABLED=0 GOOS=$(BUILD_OS) GOARCH=$(BUILD_ARCH) go build $(VERSION_FLAGS) -o ./combo
 
-build-container: ## Build the Combo container. Accepts IMAGE_REPO and IMAGE_TAG overrides.
+build-container: BUILD_OS=linux
+build-container: BUILD_ARCH=amd64
+build-container: build-cli ## Build the Combo container from the Dockerfile. Accepts IMAGE_REPO and IMAGE_TAG overrides.
 	docker build . -f Dockerfile -t $(IMAGE)
-
-build-local-container: BUILD_OS=linux
-build-local-container: BUILD_ARCH=amd64
-build-local-container: build-cli ## Build the Combo container from the Dockerfile.local to speed compile time up. Accepts IMAGE_REPO and IMAGE_TAG overrides.
-	docker build . -f Dockerfile.local -t $(IMAGE)
 
 build-bundle: ## Build the Combo bundle. Accepts BUNDLE_REPO and BUNDLE_TAG overrides.
 	docker build . -f Dockerfile.plainbundle -t $(BUNDLE)
@@ -98,14 +95,11 @@ test-e2e: ## Run the e2e tests
 ###################
 # Running Targets #
 ###################
-.PHONY: load-image load-bundle deploy teardown run run-local run-e2e run-e2e-local
+.PHONY: load-image deploy teardown run run-local run-e2e run-e2e-local
 
 IMAGE_LOAD_COMMAND=kind load docker-image
-load-image: ## Load-image loads the currently constructed image onto the cluster
+load-image: ## Load-image loads the currently constructed image onto the cluster. IMAGE can be overridden to load the bundle image.
 	$(IMAGE_LOAD_COMMAND) $(IMAGE)
-
-load-bundle: ## Loads the currently constructed Combo bundle onto the cluster
-	$(IMAGE_LOAD_COMMAND) $(BUNDLE)
 
 deploy: generate ## Deploy the Combo operator to the current cluster
 	kubectl apply -f manifests
@@ -115,11 +109,11 @@ teardown: ## Teardown the Combo operator to the current cluster
 
 run: build-container load-image deploy ## Run Combo on local cluster
 
-run-local: build-local-container load-image deploy ## Run Combo on local environment with Dockerfile.local for faster deployment
+run-local: build-container load-image deploy ## Run Combo on local environment with Dockerfile
 
 run-e2e: run test-e2e ## Run Combo and trigger the e2e tests for it
 
-run-e2e-local: run-local test-e2e ## Run Combo on local environment and trigger e2e tests for it using Dockerfile.local
+run-e2e-local: run-local test-e2e ## Run Combo on local environment and trigger e2e tests for it using Dockerfile
 
 ###################
 # Release Targets #
