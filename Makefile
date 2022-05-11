@@ -14,13 +14,13 @@ COMBO_VERSION :=  $(shell git describe --match 'v[0-9]*' --tags --always)
 export KUBERNETES_VERSION=v0.22.2
 
 # Container build options
-export IMAGE_REPO=quay.io/operator-framework/combo-operator
-export IMAGE_TAG=latest
-IMAGE=$(IMAGE_REPO):$(IMAGE_TAG)
+export IMAGE_REPO ?= quay.io/operator-framework/combo-operator
+export IMAGE_TAG ?= latest
+IMAGE ?= $(IMAGE_REPO):$(IMAGE_TAG)
 
-export BUNDLE_REPO=quay.io/operator-framework/combo-bundle
-export BUNDLE_TAG=latest
-BUNDLE=$(BUNDLE_REPO):$(BUNDLE_TAG)
+export BUNDLE_REPO ?= quay.io/operator-framework/combo-bundle
+export BUNDLE_TAG ?= latest
+BUNDLE ?= $(BUNDLE_REPO):$(BUNDLE_TAG)
 
 # kernel-style V=1 build verbosity
 ifeq ("$(origin V)", "command line")
@@ -67,7 +67,7 @@ verify: tidy generate format lint ## Verify the current code generation and lint
 	git diff --exit-code
 
 VERSION_FLAGS=-ldflags "-X $(VERSION_PATH).GitCommit=$(GIT_COMMIT) -X $(VERSION_PATH).ComboVersion=$(COMBO_VERSION) -X $(VERSION_PATH).KubernetesVersion=$(KUBERNETES_VERSION)"
-build-cli: ## Build the CLI binary. Specify VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version. You may also specify BUILD_OS and BUILD_ARCH to change the build's binary. 
+build-cli: ## Build the CLI binary. Specify VERSION_PATH, GIT_COMMIT, or KUBERNETES_VERSION to change the binary version. You may also specify BUILD_OS and BUILD_ARCH to change the build's binary.
 	$(Q) CGO_ENABLED=0 GOOS=$(BUILD_OS) GOARCH=$(BUILD_ARCH) go build $(VERSION_FLAGS) -o ./combo
 
 build-container: BUILD_OS=linux
