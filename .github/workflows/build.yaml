@@ -20,7 +20,7 @@ jobs:
           make build-cli
       - name: Run the CLI
         run: |
-          ./bin/combo
+          ./combo
       - name: Build the container
         run: |
           make build-container
